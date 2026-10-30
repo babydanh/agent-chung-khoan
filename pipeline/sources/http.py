@@ -12,7 +12,7 @@ class SourceError(Exception):
     """A data source could not deliver usable data."""
 
 
-def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout=30, method=None):
+def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout=30, method=None, text=False):
     """POST payload as JSON (GET when payload is None) and return the decoded body (None when it is empty)."""
     import time
     sleep = sleep or time.sleep
@@ -30,6 +30,8 @@ def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout
                 raw = r.read()
             if raw[:2] == b"\x1f\x8b":
                 raw = gzip.decompress(raw)
+            if text:
+                return raw.decode("utf-8", errors="replace")
             return json.loads(raw) if raw.strip() else None
         except urllib.error.HTTPError as e:
             last = e

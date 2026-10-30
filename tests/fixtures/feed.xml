@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Demo</title>
+<item>
+  <title>Hòa Phát (HPG) công bố kết quả; USD tăng, GDP và CEO nói về FPT</title>
+  <link>https://example.com/a1</link>
+  <pubDate>Fri, 30 Oct 2026 02:15:00 +0000</pubDate>
+  <description><![CDATA[<p>Cổ phiếu <b>HPG</b> được chú ý.&nbsp;Xem thêm <a href="https://x.y">tại đây</a>.</p><script>alert(1)</script>]]></description>
+</item>
+<item>
+  <title>Tin không có mô tả</title>
+  <link>https://example.com/a2</link>
+  <pubDate>not a date</pubDate>
+</item>
+<item>
+  <title>Bài dài</title>
+  <link>https://example.com/a3</link>
+  <pubDate>Fri, 30 Oct 2026 03:00:00 +0700</pubDate>
+  <description>Ý tưởng dài dòng lặp đi lặp lại. LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG_LONG</description>
+</item>
+<item><title></title><link>https://example.com/empty</link></item>
+</channel></rss>
