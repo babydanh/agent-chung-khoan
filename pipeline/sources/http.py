@@ -33,6 +33,7 @@ def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout
             return json.loads(raw) if raw.strip() else None
         except urllib.error.HTTPError as e:
             last = e
+            e.close()
             if e.code < 500 and e.code != 429:
                 break  # a client error will not fix itself
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:

@@ -55,6 +55,11 @@ class ClientTest(unittest.TestCase):
         self.assertIn("on_conflict=asof%2Csymbol", req["path"])
         self.assertIn("merge-duplicates", req["headers"]["prefer"])
 
+    def test_upsert_can_keep_existing_rows_instead_of_merging(self):
+        with FakeServer(lambda *a: (201, None)) as s:
+            Supabase(s.url, "K", sleep=NO_SLEEP).upsert("bars_30m", [{"a": 1}], "symbol,bar_start", merge=False)
+            self.assertIn("ignore-duplicates", s.requests[0]["headers"]["prefer"])
+
     def test_upsert_splits_big_batches_and_skips_empty_ones(self):
         with FakeServer(lambda *a: (201, None)) as s:
             db = Supabase(s.url, "K", sleep=NO_SLEEP)

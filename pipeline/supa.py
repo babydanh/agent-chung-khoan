@@ -37,10 +37,12 @@ class Supabase:
             if len(rows) < page:
                 return out
 
-    def upsert(self, table, rows, on_conflict):
+    def upsert(self, table, rows, on_conflict, merge=True):
+        """merge=False keeps the row that is already there (first writer wins), so a rerun cannot overwrite it."""
         q = urllib.parse.urlencode({"on_conflict": on_conflict})
+        mode = "merge-duplicates" if merge else "ignore-duplicates"
         for i in range(0, len(rows), BATCH):
-            self._call(f"/{table}?{q}", rows[i:i + BATCH], prefer="resolution=merge-duplicates,return=minimal")
+            self._call(f"/{table}?{q}", rows[i:i + BATCH], prefer=f"resolution={mode},return=minimal")
 
     def delete(self, table, params):
         self._call(f"/{table}?{urllib.parse.urlencode(params)}", method="DELETE", prefer="return=minimal")
