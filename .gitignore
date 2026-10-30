@@ -1,0 +1,8 @@
+.env
+*.jks
+key.properties
+google-services.json
+.venv/
+__pycache__/
+build/
+.lavish/
