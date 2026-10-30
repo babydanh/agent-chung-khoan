@@ -1,10 +1,20 @@
 {
-  "version": 1,
+  "version": 2,
   "VN": {
     "min_days": 20,
     "s1_z": 3.5,
     "min_vol": 10000,
     "s2_share": 0.2,
-    "s3_value": 10000000000
+    "s3_value": 10000000000,
+    "s4_k": 1.5
+  },
+  "US": {
+    "min_days": 20,
+    "s1_z": 3.5,
+    "min_vol": 50000,
+    "s2_share": 0.2,
+    "s3_value": 10000000,
+    "s4_k": 1.5,
+    "s5_k": 1.0
   }
 }
