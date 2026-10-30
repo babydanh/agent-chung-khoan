@@ -1,0 +1,64 @@
+name: snap-us
+
+on:
+  schedule:
+    - cron: "5 10 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 10 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "5 11 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 11 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "5 12 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 12 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "5 13 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 13 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "5 14 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 14 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "5 15 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "35 15 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "20 16 * * 1-5"
+      timezone: "America/New_York"
+    - cron: "50 16 * * 1-5"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snap-us
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in "SUPABASE_URL" "SUPABASE_SECRET_KEY" "APCA_API_KEY_ID" "APCA_API_SECRET_KEY"; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing secrets:$missing"
+            exit 1
+          fi
+      - name: Run US snapshot
+        run: python3 -m pipeline.run --market US

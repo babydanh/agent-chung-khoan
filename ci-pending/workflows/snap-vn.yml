@@ -1,0 +1,56 @@
+name: snap-vn
+
+on:
+  schedule:
+    - cron: "20 9 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "50 9 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "20 10 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "50 10 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "20 11 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "40 11 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "20 13 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "50 13 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "20 14 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "50 14 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "5 15 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snap-vn
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in "SUPABASE_URL" "SUPABASE_SECRET_KEY"; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing secrets:$missing"
+            exit 1
+          fi
+      - name: Run VN snapshot
+        run: python3 -m pipeline.run --market VN
