@@ -1,0 +1,5 @@
+# Minimal config so `supabase start` works in CI; everything else uses CLI defaults.
+project_id = "agent-chung-khoan"
+
+[db]
+major_version = 15
