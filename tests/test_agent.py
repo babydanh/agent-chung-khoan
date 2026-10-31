@@ -166,7 +166,7 @@ class FallbackReasonTest(unittest.TestCase):
 
     def test_the_key_value_never_appears_in_logs_or_reasons(self):
         with self.assertLogs("pipeline.agent", level="WARNING") as cm:
-            out, _ = go(lambda *a: (401, {"error": "bad key"}), key="sk-ant-SECRETVALUE")
+            out, _ = go(lambda *a: (401, {"error": "bad key"}), key="fake-key-SECRETVALUE")
         self.assertNotIn("SECRETVALUE", " ".join(cm.output) + out["reason"])
 
 
