@@ -38,6 +38,63 @@ class SnapshotWorkflowTest(unittest.TestCase):
         self.assertIn("python3 -m pipeline.cleanup", read("eod.yml"))
 
 
+class FailureAlertTest(unittest.TestCase):
+    NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
+
+    def step(self, text, title):
+        i = text.index(f"- name: {title}")
+        j = text.find("\n      - ", i + 1)
+        return text[i:] if j < 0 else text[i:j]
+
+    def test_every_scheduled_workflow_ends_with_a_telegram_alert_on_failure(self):
+        for n in self.NAMES:
+            t = read(n)
+            step = self.step(t, "Alert on failure")
+            self.assertIn("if: failure()", step, n)
+            self.assertIn("TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}", step, n)
+            self.assertIn("TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}", step, n)
+            self.assertIn("python3 -m pipeline.alert", step, n)
+            self.assertIn("github.run_id", step, n)
+            self.assertIn("github.workflow", step, n)
+            self.assertTrue(t.rstrip().endswith(step.rstrip()), f"{n}: the alert must be the last step")
+
+    def test_telegram_secrets_are_only_given_to_the_alert_step(self):
+        for n in self.NAMES:
+            t = read(n)
+            self.assertEqual(t.count("secrets.TELEGRAM_BOT_TOKEN"), 1, n)
+            self.assertEqual(t.count("secrets.TELEGRAM_CHAT_ID"), 1, n)
+
+    def test_secrets_live_on_steps_not_on_the_job(self):
+        for n in self.NAMES:
+            t = read(n)
+            self.assertNotRegex(t, r"\n    env:\n", n)  # job-level env
+            for s in ("SUPABASE_SECRET_KEY",):
+                self.assertIn(f"        env:\n          SUPABASE_URL", t, n)
+            self.assertNotIn("APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}\n    steps", t)
+
+    def test_checkout_does_not_keep_credentials(self):
+        for n in self.NAMES + ("ci.yml",):
+            t = read(n)
+            i = t.index("actions/checkout@")
+            self.assertIn("persist-credentials: false", t[i:i + 300], n)
+
+    def test_the_alert_step_does_not_echo_anything_secret(self):
+        for n in self.NAMES:
+            self.assertNotIn("echo", self.step(read(n), "Alert on failure"), n)
+
+
+class EodJobTest(unittest.TestCase):
+    def test_eod_cleans_up_then_checks_the_day_and_always_runs_the_check(self):
+        t = read("eod.yml")
+        self.assertIn("python3 -m pipeline.cleanup", t)
+        i = t.index("python3 -m pipeline.eod")
+        self.assertIn("if: always()", t[max(0, i - 400):i])
+        self.assertIn("ALERT_DETAIL_FILE", t)
+
+    def test_eod_runs_after_both_markets_have_finished(self):
+        self.assertEqual(crons(read("eod.yml")), [("18:00".lstrip("0"), "Asia/Ho_Chi_Minh")])
+
+
 class AllWorkflowsTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "ci.yml")
 

@@ -207,16 +207,20 @@ def process(market, now, rows, prev_quotes, history, th, sessions=None, stats=No
     return bars, sigs, quotes
 
 
-def expected_slots(market, day, cal):
-    """Slots (UTC datetimes) that should have a snapshot on a local day: one per scheduled run inside the run
-    window; none on weekends and holidays."""
+def expected_runs(market, day, cal):
+    """[(scheduled run time, slot)] as UTC datetimes for a local day: the runs inside the run window; none on
+    weekends and holidays. US early-close days stop earlier because the window does."""
     tz = calendar.TZ[market]
     out = []
     for t in RUNS[market]:
         at = datetime.combine(day, t, tzinfo=tz)
         if calendar.is_run_window(market, at.astimezone(timezone.utc), cal):
-            out.append(at.replace(minute=at.minute // 30 * 30).astimezone(timezone.utc))
+            out.append((at.astimezone(timezone.utc), at.replace(minute=at.minute // 30 * 30).astimezone(timezone.utc)))
     return out
+
+
+def expected_slots(market, day, cal):
+    return [slot for _, slot in expected_runs(market, day, cal)]
 
 
 def _missed_slots(db, market, slot_dt, now, cal):
