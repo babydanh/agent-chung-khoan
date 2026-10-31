@@ -44,7 +44,7 @@ class ClientTest(unittest.TestCase):
             return 200, [{"i": i} for i in range(off, min(off + 3, 7))]
 
         with FakeServer(handler) as s:
-            rows = Supabase(s.url, "K", sleep=NO_SLEEP).select_all("bars_30m", {"select": "*"}, page=3)
+            rows = Supabase(s.url, "K", sleep=NO_SLEEP).select_all("bars_30m", {"select": "*"}, page=3, order="i.asc")
         self.assertEqual([r["i"] for r in rows], list(range(7)))
 
     def test_upsert_merges_on_the_conflict_columns(self):

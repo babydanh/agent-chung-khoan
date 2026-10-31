@@ -6,6 +6,7 @@ from datetime import datetime, time, timedelta, timezone
 
 from pipeline.banned import find_banned
 from pipeline.run import closed, main, slot_start, window_minutes
+from tests.fakedb import FakeDB, KEYS
 from tests.fakehttp import FakeServer
 
 UTC = timezone.utc
@@ -13,68 +14,6 @@ NOW = datetime(2026, 10, 30, 2, 50, tzinfo=UTC)  # Friday 09:50 in Ho Chi Minh -
 SLOT = "2026-10-30T02:30:00+00:00"
 PREV_ASOF = "2026-10-30T02:20:00+00:00"
 SYMS = ["AAA", "BBB"]
-# primary / unique keys of supabase/migrations/0002_market_and_app_tables.sql
-KEYS = {"conflict": {"bars_30m": ("market", "symbol", "bar_start"), "signals": ("market", "asof", "symbol"),
-                     "snapshot_meta": ("market", "slot_start"), "quotes_latest": ("market", "symbol"),
-                     "heartbeat": ("market", "job")}}
-
-
-class FakeDB:
-    """In-memory PostgREST stand-in: upsert by conflict key, eq/gte/lt filters, limit/offset."""
-
-    def __init__(self, fail_tables=()):
-        self.tables = {}
-        self.fail = set(fail_tables)
-        self.writes = []
-        self.violations = []
-
-    def rows(self, t):
-        return list(self.tables.get(t, {}).values())
-
-    def put(self, t, row):
-        key = tuple(row[c] for c in KEYS["conflict"][t])
-        self.tables.setdefault(t, {})[key] = row
-
-    def __call__(self, method, path, headers, body):
-        u = urllib.parse.urlparse(path)
-        table = u.path.rsplit("/", 1)[-1]
-        q = {k: v[0] for k, v in urllib.parse.parse_qs(u.query).items()}
-        if method == "POST":
-            if table in self.fail:
-                return 500, {}
-            self.writes.append(table)
-            want = ",".join(KEYS["conflict"][table])
-            if q.get("on_conflict") != want:
-                self.violations.append(f"{table}: on_conflict {q.get('on_conflict')} != {want}")
-            if not all(r.get("market") in ("VN", "US") for r in body):
-                self.violations.append(f"{table}: row without market")
-            if self.violations:
-                return 400, {"violations": self.violations}
-            ignore = "ignore-duplicates" in headers.get("prefer", headers.get("Prefer", ""))
-            for r in body:
-                key = tuple(r[c] for c in KEYS["conflict"][table])
-                if ignore and key in self.tables.get(table, {}):
-                    continue
-                self.put(table, r)
-            return 201, None
-        out = self.rows(table)
-        self.reads = getattr(self, "reads", []) + [(table, q)]
-        for k, v in q.items():
-            if k in ("select", "limit", "offset", "on_conflict"):
-                continue
-            op, _, val = v.partition(".")
-            if op == "eq":
-                out = [r for r in out if str(r.get(k)) == val]
-            elif op == "in":
-                out = [r for r in out if r.get(k) in val.strip("()").split(",")]
-            elif op == "gte":
-                out = [r for r in out if str(r.get(k)) >= val]
-            elif op == "lt":
-                out = [r for r in out if str(r.get(k)) < val]
-        off, lim = int(q.get("offset", 0)), int(q.get("limit", 1000))
-        return 200, out[off:off + lim]
-
-
 def board(**over):
     row = {"EX": "HOSE", "CP": 10_000, "RE": 10_000, "CL": 10_700, "FL": 9_300,
            "TT": 200_000, "TV": 2_000_000_000, "FB": 1000, "FS": 1000, "FR": 0, "PTQ": 0, "PTV": 0}
@@ -237,7 +176,7 @@ class NormalRunTest(unittest.TestCase):
         later = {s: {**r, "TT": r["TT"] + 10} for s, r in self.rows.items()}
         with self.assertLogs("pipeline.run", level="INFO") as cm:
             run(self.db, later, now=datetime(2026, 10, 30, 2, 55, tzinfo=UTC))
-        self.assertTrue(any("already" in line for line in cm.output))
+        self.assertTrue(any("finishing" in line for line in cm.output))  # the slot is completed, not skipped
         bars = {r["symbol"]: r for r in self.db.rows("bars_30m")}
         self.assertEqual(bars["AAA"]["vol"], 100_000)
 
