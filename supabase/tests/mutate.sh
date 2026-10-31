@@ -3,7 +3,7 @@
 # Needs docker. Usage: supabase/tests/mutate.sh   (exit 0 = baseline passes and every mutation is caught)
 set -u
 cd "$(dirname "$0")/../.."
-IMG=${PG_IMAGE:-postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab}
+IMG=${PG_IMAGE:-postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b}
 NAME=rls-mutation-$$
 docker run -d --rm --name "$NAME" -e POSTGRES_PASSWORD=x "$IMG" >/dev/null
 trap 'docker rm -f "$NAME" >/dev/null 2>&1' EXIT
@@ -14,7 +14,7 @@ fresh() {  # new database with shim + migrations, optional mutation SQL on stdin
   psql_ -d postgres -c "drop database if exists t" -c "create database t" >/dev/null
   psql_ -d t -f - < supabase/tests/local_shim.sql >/dev/null
   for f in supabase/migrations/*.sql; do psql_ -d t -f - < "$f" >/dev/null || return 1; done
-  [ -n "${1:-}" ] && psql_ -d t -c "$1" >/dev/null
+  if [ -n "${1:-}" ]; then psql_ -d t -c "$1" >/dev/null || return 1; fi
   return 0
 }
 run() { psql_ -d t -f - < supabase/tests/rls.sql 2>&1; }
@@ -22,6 +22,11 @@ run() { psql_ -d t -f - < supabase/tests/rls.sql 2>&1; }
 fresh || { echo "migrations failed"; exit 1; }
 out=$(run) && grep -q 'RLS OK' <<<"$out" || { echo "BASELINE FAILED"; echo "$out"; exit 1; }
 echo "baseline: RLS OK"
+
+# rewrite(fn, regex, replacement): SQL that edits a function body in place (regexp, 'g'), to mutate one line of it.
+rewrite() { echo "do \$d\$ begin execute regexp_replace(pg_get_functiondef('$1'::regprocedure), '$2', '$3', 'g'); end \$d\$"; }
+# A policy whose helper takes the row column: a correlated SubPlan that runs per row (the 0002 bug fixed in P2).
+PERROW='create function public.crm(m text) returns boolean language sql stable security definer set search_path = '"''"' as $f$ select m = '"'VN'"' or public.is_app_owner() $f$; grant execute on function public.crm(text) to authenticated;'
 
 # Each mutation weakens one control; rls.sql must then fail.
 mutations=(
@@ -42,8 +47,7 @@ mutations=(
   'drop policy "read digests by market" on public.digests'
   'drop policy "read digests by market" on public.digests; create policy m on public.digests for select to authenticated using (true)'
   'drop policy "read news by market" on public.news; create policy m on public.news for select to authenticated using (true)'
-  'create or replace function public.can_read_market(m text) returns boolean language sql stable set search_path = '"''''"' as $f$ select true $f$'
-  'create or replace function public.is_app_owner() returns boolean language sql stable security definer set search_path = '"''''"' as $f$ select true $f$'
+  'create or replace function public.is_app_owner() returns boolean language sql stable security definer set search_path = '"''"' as $f$ select true $f$'
   'create or replace view public.signal_levels with (security_invoker = false) as select market, asof, symbol, level, learning, items from public.signals'
   'alter view public.signal_levels set (security_invoker = true)'
   'grant select on public.signal_levels to anon'
@@ -60,8 +64,8 @@ mutations=(
   'alter table public.consents drop constraint consents_kind_check'
   'alter table public.consents drop constraint consents_version_check'
   'drop trigger watchlists_cap on public.watchlists'
-  'create or replace function public.cleanup_old_data(keep_compact int default 96) returns jsonb language sql security definer set search_path = '"''''"' as $f$ select '"'{}'"'::jsonb $f$'
-  'create or replace function public.db_size_mb() returns numeric language sql security definer set search_path = '"''''"' as $f$ select 0::numeric $f$'
+  'create or replace function public.cleanup_old_data(keep_compact int default 96) returns jsonb language sql security definer set search_path = '"''"' as $f$ select '"'{}'"'::jsonb $f$'
+  'create or replace function public.db_size_mb() returns numeric language sql security definer set search_path = '"''"' as $f$ select 0::numeric $f$'
   'drop index public.signals_market_symbol_asof_idx'
   'drop index public.zones_market_symbol_asof_idx'
   'create index watchlists_user_id_idx on public.watchlists (user_id)'
@@ -74,9 +78,28 @@ mutations=(
   'grant update on public.quotes_latest to authenticated; create policy m on public.quotes_latest for update to authenticated using (true)'
   'grant select on public.baseline_30m to anon; create policy m on public.baseline_30m for select to anon using (true)'
   'create policy m on public.digests for select to anon using (true); grant select on public.digests to anon'
-  'create or replace function public.delete_my_account() returns void language sql security definer set search_path = '"''''"' as $f$ delete from auth.users $f$'
+  'create or replace function public.delete_my_account() returns void language sql security definer set search_path = '"''"' as $f$ delete from auth.users $f$'
   'drop policy "signed-in users read snapshot" on public.snapshot_meta'
   'alter table public.snapshot_meta drop constraint snapshot_meta_market_slot_start_key'
+  'alter function public.cleanup_old_data(int) set search_path = public'
+  'alter function public.db_size_mb() set search_path = public'
+  'alter default privileges in schema public grant all on tables to anon, authenticated'
+  'alter default privileges in schema public grant all on sequences to anon, authenticated'
+  "$PERROW drop policy \"read signals by market\" on public.signals; create policy m on public.signals for select to authenticated using ((select public.crm(market)))"
+  "$PERROW drop policy \"read digests by market\" on public.digests; create policy m on public.digests for select to authenticated using ((select public.crm(market)))"
+  "$PERROW drop policy \"read news by market\" on public.news; create policy m on public.news for select to authenticated using ((select public.crm(market)))"
+  'drop trigger consents_cap on public.consents'
+  "$(rewrite 'public.consents_cap()' '>= 100' '>= 1000')"
+  "$(rewrite 'public.cleanup_old_data(int)' "45 days" "30 days")"
+  "$(rewrite 'public.cleanup_old_data(int)' "45 days" "90 days")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(delete from public\\.zones\\s+where )" "\\1false and ")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(delete from public\\.news\\s+where )" "\\1false and ")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(delete from public\\.digests\\s+where )" "\\1false and ")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(delete from public\\.heartbeat\\s+where )" "\\1false and ")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(delete from public\\.zones\\s+where asof < now\\(\\) - interval .)30" "\\190")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(published_at < now\\(\\) - interval .)90" "\\130")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(created_at < now\\(\\) - interval .)90" "\\130")"
+  "$(rewrite 'public.cleanup_old_data(int)' "(last_seen < now\\(\\) - interval .)30" "\\190")"
 )
 survived=0
 total=${#mutations[@]}; caught=0

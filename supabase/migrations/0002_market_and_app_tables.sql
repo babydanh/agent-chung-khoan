@@ -3,8 +3,11 @@
 -- swaps and the CHECK scan are cheap; no large index is built, so CONCURRENTLY (not allowed in a
 -- migration transaction anyway) is not needed. Only the bot (secret key, bypasses RLS) writes market data.
 
--- New tables/sequences created from here on are NOT open to the API roles; section 5 grants reads explicitly.
-alter default privileges in schema public revoke all on tables from anon, authenticated;
+-- New tables and sequences created from here on are NOT open to the API roles; section 5 grants reads explicitly.
+-- (Identity columns need no sequence grant to insert.) Functions are not covered: Postgres gives EXECUTE to PUBLIC
+-- on every new function and a schema-level default cannot take that away, so each function below revokes explicitly.
+alter default privileges in schema public revoke all on tables    from anon, authenticated;
+alter default privileges in schema public revoke all on sequences from anon, authenticated;
 
 ------------------------------------------------------------------------------------------------------
 -- 1. market column + composite keys, so a VN and a US ticker with the same symbol never collide
@@ -128,15 +131,8 @@ create function public.is_app_owner() returns boolean
 language sql stable security definer set search_path = ''
 as $$ select exists (select 1 from public.app_owners where user_id = auth.uid()) $$;
 
--- VN data is shared with every signed-in user; US prices/volumes only with the app owner.
-create function public.can_read_market(m text) returns boolean
-language sql stable set search_path = ''
-as $$ select m = 'VN' or public.is_app_owner() $$;
-
-revoke all on function public.is_app_owner()          from public, anon;
-revoke all on function public.can_read_market(text)   from public, anon;
-grant execute on function public.is_app_owner()        to authenticated;
-grant execute on function public.can_read_market(text) to authenticated;
+revoke all on function public.is_app_owner() from public, anon;
+grant execute on function public.is_app_owner() to authenticated;
 
 ------------------------------------------------------------------------------------------------------
 -- 4. per-user tables (FK to auth.users, cascade on account deletion)
@@ -181,6 +177,21 @@ create table public.consents (
   created_at timestamptz not null default now()
 );
 create index consents_user_id_idx on public.consents (user_id);
+
+-- At most 100 rows per user, same advisory-lock pattern as watchlists_cap (the log is append-only, so a cap is the only bound).
+create function public.consents_cap() returns trigger
+language plpgsql set search_path = ''
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtextextended(new.user_id::text, 1));
+  if (select count(*) from public.consents where user_id = new.user_id) >= 100 then
+    raise exception 'consents limit (100) reached' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+create trigger consents_cap before insert on public.consents
+  for each row execute function public.consents_cap();
 
 -- Deletes only the caller. SECURITY DEFINER is needed because users cannot touch auth.users; the target is
 -- always auth.uid(), never a parameter. ON DELETE CASCADE removes the caller's rows in the tables above.
@@ -229,13 +240,15 @@ alter table public.consents         enable row level security;
 -- Replace the 0001 "using (true)" policies: policies are OR-ed, so leaving them would leak US rows.
 drop policy "signed-in users read quotes"  on public.quotes_latest;
 drop policy "signed-in users read signals" on public.signals;
-create policy "read quotes by market"  on public.quotes_latest for select to authenticated using ((select public.can_read_market(market)));
-create policy "read signals by market" on public.signals       for select to authenticated using ((select public.can_read_market(market)));
-create policy "read bars_1d by market" on public.bars_1d       for select to authenticated using ((select public.can_read_market(market)));
-create policy "read zones by market"   on public.zones         for select to authenticated using ((select public.can_read_market(market)));
-create policy "read digests by market" on public.digests       for select to authenticated using ((select public.can_read_market(market)));
-create policy "read news by market"    on public.news          for select to authenticated using ((select public.can_read_market(market)));
--- (select ...) lets the planner evaluate the helper once per query instead of once per row.
+create policy "read quotes by market"  on public.quotes_latest for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+create policy "read signals by market" on public.signals       for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+create policy "read bars_1d by market" on public.bars_1d       for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+create policy "read zones by market"   on public.zones         for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+create policy "read digests by market" on public.digests       for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+create policy "read news by market"    on public.news          for select to authenticated using (market = 'VN' or (select public.is_app_owner()));
+-- VN data is shared with every signed-in user; US prices/volumes only with the app owner. The owner check has no
+-- column reference, so (select ...) makes it an InitPlan: evaluated once per query, not once per row. (A helper that
+-- took the row's market column would be a correlated SubPlan and run per row.) rls.sql checks the plans.
 -- snapshot_meta keeps its 0001 read policy (counts only, no prices).
 -- bars_30m, baseline_30m, heartbeat, snapshot_compact, app_owners: RLS on, no policy -> secret key only.
 -- No insert/update/delete policy on any market table: the app can never write them.
@@ -262,21 +275,28 @@ create policy "own consents insert" on public.consents for insert to authenticat
 ------------------------------------------------------------------------------------------------------
 -- 7. bot helpers (RPC, secret key only)
 ------------------------------------------------------------------------------------------------------
--- Retention: signals/bars_30m 30 days (the baseline needs 20), snapshot_meta 60 days, snapshot_compact newest N slots per market.
+-- Retention (single source of truth, docs/schema.md repeats it): signals 30 days, bars_30m 45 days (the bot keeps 40
+-- sessions and 20 sessions can span over 30 calendar days across Tet), snapshot_meta 60 days, zones 30, news 90,
+-- digests 90, heartbeat 30 days, snapshot_compact newest N slots per market.
 create function public.cleanup_old_data(keep_compact int default 96) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
-declare n_sig bigint; n_bars bigint; n_meta bigint; n_compact bigint;
+declare n_sig bigint; n_bars bigint; n_meta bigint; n_compact bigint; n_zones bigint; n_news bigint; n_dig bigint; n_hb bigint;
 begin
   delete from public.signals  where asof < now() - interval '30 days';           get diagnostics n_sig = row_count;
-  delete from public.bars_30m where bar_start < now() - interval '30 days';      get diagnostics n_bars = row_count;
+  delete from public.bars_30m where bar_start < now() - interval '45 days';      get diagnostics n_bars = row_count;
   delete from public.snapshot_meta where asof < now() - interval '60 days';      get diagnostics n_meta = row_count;
+  delete from public.zones     where asof < now() - interval '30 days';          get diagnostics n_zones = row_count;
+  delete from public.news      where published_at < now() - interval '90 days';  get diagnostics n_news = row_count;
+  delete from public.digests   where created_at < now() - interval '90 days';    get diagnostics n_dig = row_count;
+  delete from public.heartbeat where last_seen < now() - interval '30 days';     get diagnostics n_hb = row_count;
   delete from public.snapshot_compact sc using (
     select market, slot_start, row_number() over (partition by market order by slot_start desc) as rn
     from public.snapshot_compact
   ) r where sc.market = r.market and sc.slot_start = r.slot_start and r.rn > keep_compact;
   get diagnostics n_compact = row_count;
-  return jsonb_build_object('signals', n_sig, 'bars_30m', n_bars, 'snapshot_meta', n_meta, 'snapshot_compact', n_compact);
+  return jsonb_build_object('signals', n_sig, 'bars_30m', n_bars, 'snapshot_meta', n_meta, 'snapshot_compact', n_compact,
+                            'zones', n_zones, 'news', n_news, 'digests', n_dig, 'heartbeat', n_hb);
 end;
 $$;
 
