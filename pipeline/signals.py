@@ -41,16 +41,16 @@ def evaluate(d, history, th, atr=None, market=None, minutes=None, history_minute
             raise ValueError("minutes needs history_minutes")
         if len(history_minutes) != len(history):
             raise ValueError("history_minutes must match history")
-    learning = len(history) < th["min_days"]
+    value, base = d["vol"], history
+    if minutes is not None:
+        # a window without trading minutes cannot form a rate: it is left out of the baseline
+        value = d["vol"] / minutes if minutes > 0 else None
+        base = [v / m for v, m in zip(history, history_minutes) if m > 0]
+    learning = len(base) < th["min_days"]  # count the baseline actually used, not the raw history
     big = d["vol"] >= th["min_vol"]
     signals = []
     if big and not learning:
-        value, base = d["vol"], history
-        if minutes is not None:
-            # skip S1 when the window has no trading minutes (cannot form a rate)
-            value = d["vol"] / minutes if minutes > 0 else None
-            base = [v / m for v, m in zip(history, history_minutes) if m > 0]
-        z = robust_z(value, base) if value is not None and base else None
+        z = robust_z(value, base) if value is not None else None
         if z is not None and z >= th["s1_z"]:
             signals.append({"id": "S1", "dir": None})
     if big and abs(d["fnet"]) >= th["s2_share"] * d["vol"]:

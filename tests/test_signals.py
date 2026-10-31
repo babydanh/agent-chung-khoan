@@ -98,6 +98,24 @@ class PerMinuteS1Test(unittest.TestCase):
             evaluate(BIG, HIST, TH, minutes=30)
 
 
+class LearningCountTest(unittest.TestCase):
+    def test_learning_counts_the_baseline_actually_used_not_the_raw_history(self):
+        # 20 past windows, but 8 of them had no trading minutes: only 12 usable days
+        mins = [30] * 12 + [0] * 8
+        d = {**BIG, "vol": 400_000, "fnet": 120_000}
+        r = evaluate(d, HIST, TH, minutes=15, history_minutes=mins)
+        self.assertTrue(r["learning"])
+        self.assertNotIn("S1", ids(r))
+        self.assertEqual(r["level"], 1)
+
+    def test_full_usable_baseline_is_not_learning(self):
+        r = evaluate(BIG, HIST, TH, minutes=15, history_minutes=[30] * 20)
+        self.assertFalse(r["learning"])
+
+    def test_raw_history_still_decides_when_minutes_are_not_given(self):
+        self.assertTrue(evaluate(BIG, HIST[:19], TH)["learning"])
+
+
 class S4Test(unittest.TestCase):
     def test_move_of_at_least_k_atr_triggers_with_direction(self):
         up = evaluate({**BIG, "px_move": 3.0}, HIST, TH2, atr=2.0)
