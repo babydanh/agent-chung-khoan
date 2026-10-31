@@ -3,3 +3,6 @@ project_id = "agent-chung-khoan"
 
 [db]
 major_version = 15
+
+[auth]
+enable_anonymous_sign_ins = false
