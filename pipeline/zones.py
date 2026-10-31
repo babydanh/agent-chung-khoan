@@ -20,7 +20,7 @@ def _levels(pivot_levels, bands):
 
 
 def find_zones(price, pivot_levels, bands, atr, tol_k=0.5):
-    """Group levels at most tol_k * ATR apart; keep groups of 2+ sources, nearest to price first.
+    """Group levels within tol_k * ATR of the group start; keep groups with both a Pivot and a Bollinger level.
 
     Returns [] when ATR is unknown: without it there is no scale for "close together".
     """
@@ -29,13 +29,13 @@ def find_zones(price, pivot_levels, bands, atr, tol_k=0.5):
     tol = tol_k * atr
     groups = []
     for value, name in _levels(pivot_levels, bands):
-        if groups and value - groups[-1][-1][0] <= tol:
+        if groups and value - groups[-1][0][0] <= tol:  # width from the group's first level, not a chain
             groups[-1].append((value, name))
         else:
             groups.append([(value, name)])
     zones = []
     for g in groups:
-        if len(g) < 2:
+        if len({n.split()[0] for _, n in g}) < 2:  # needs a level from each family (Pivot and Bollinger)
             continue
         low, high = g[0][0], g[-1][0]
         if low <= price <= high:

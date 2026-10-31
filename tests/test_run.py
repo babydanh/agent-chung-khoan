@@ -13,9 +13,10 @@ NOW = datetime(2026, 10, 30, 2, 50, tzinfo=UTC)  # Friday 09:50 in Ho Chi Minh -
 SLOT = "2026-10-30T02:30:00+00:00"
 PREV_ASOF = "2026-10-30T02:20:00+00:00"
 SYMS = ["AAA", "BBB"]
-KEYS = {"conflict": {"bars_30m": ("symbol", "bar_start"), "signals": ("asof", "symbol"),
-                     "snapshot_meta": ("market", "asof"), "quotes_latest": ("symbol",),
-                     "heartbeat": ("market",)}}
+# primary / unique keys of supabase/migrations/0002_market_and_app_tables.sql
+KEYS = {"conflict": {"bars_30m": ("market", "symbol", "bar_start"), "signals": ("market", "asof", "symbol"),
+                     "snapshot_meta": ("market", "slot_start"), "quotes_latest": ("market", "symbol"),
+                     "heartbeat": ("market", "job")}}
 
 
 class FakeDB:
@@ -25,6 +26,7 @@ class FakeDB:
         self.tables = {}
         self.fail = set(fail_tables)
         self.writes = []
+        self.violations = []
 
     def rows(self, t):
         return list(self.tables.get(t, {}).values())
@@ -41,6 +43,13 @@ class FakeDB:
             if table in self.fail:
                 return 500, {}
             self.writes.append(table)
+            want = ",".join(KEYS["conflict"][table])
+            if q.get("on_conflict") != want:
+                self.violations.append(f"{table}: on_conflict {q.get('on_conflict')} != {want}")
+            if not all(r.get("market") in ("VN", "US") for r in body):
+                self.violations.append(f"{table}: row without market")
+            if self.violations:
+                return 400, {"violations": self.violations}
             ignore = "ignore-duplicates" in headers.get("prefer", headers.get("Prefer", ""))
             for r in body:
                 key = tuple(r[c] for c in KEYS["conflict"][table])
@@ -49,12 +58,15 @@ class FakeDB:
                 self.put(table, r)
             return 201, None
         out = self.rows(table)
+        self.reads = getattr(self, "reads", []) + [(table, q)]
         for k, v in q.items():
             if k in ("select", "limit", "offset", "on_conflict"):
                 continue
             op, _, val = v.partition(".")
             if op == "eq":
                 out = [r for r in out if str(r.get(k)) == val]
+            elif op == "in":
+                out = [r for r in out if r.get(k) in val.strip("()").split(",")]
             elif op == "gte":
                 out = [r for r in out if str(r.get(k)) >= val]
             elif op == "lt":
@@ -70,7 +82,7 @@ def board(**over):
 
 
 def quote(sym, **over):
-    base = {"symbol": sym, "exchange": "HOSE", "price": 10_000, "ref_price": 10_000, "ceil_price": 10_700,
+    base = {"market": "VN", "symbol": sym, "exchange": "HOSE", "price": 10_000, "ref_price": 10_000, "ceil_price": 10_700,
             "floor_price": 9_300, "vol": 100_000, "val": 1_000_000_000, "f_buy": 500, "f_sell": 500,
             "f_room": 0, "pt_vol": 0, "pt_val": 0, "asof": PREV_ASOF}
     return {**base, **over}
@@ -82,9 +94,10 @@ def env_for(url, **extra):
 
 def run(db, rows, now=NOW, market="VN", env_extra=None):
     with FakeServer(db) as s:
-        fetch = lambda symbols: {k: {"SB": k, **v} for k, v in rows.items()}
+        fetch = lambda symbols: {k: {"SB": k, "SRC": "KBS", **v} for k, v in rows.items()}
         code = main(["--market", market], env_for(s.url, **(env_extra or {})), now=now, fetch=fetch, symbols=SYMS,
                     sleep=lambda x: None)
+        assert not db.violations, db.violations
         return code, s.requests
 
 
@@ -165,10 +178,10 @@ class ClosedMarketTest(unittest.TestCase):
             db.put("quotes_latest", quote(s, vol=200_000))
         with self.assertLogs("pipeline.run", level="INFO") as cm:
             code, reqs = run(db, {s: board() for s in SYMS})
-        self.assertEqual(code, 0)
+        self.assertEqual(code, 1)  # a weekday outside the holiday list that looks closed is an alarm, see ClosedGateTest
         self.assertTrue(any("closed" in line for line in cm.output))
-        self.assertEqual(db.writes, [])
-        self.assertEqual([r for r in reqs if r["method"] == "POST"], [])
+        self.assertEqual(db.writes, ["heartbeat"])  # only the "closed" heartbeat, no bars, quotes or snapshot
+        self.assertEqual(db.rows("snapshot_meta"), [])
 
 
 class NormalRunTest(unittest.TestCase):
@@ -191,8 +204,11 @@ class NormalRunTest(unittest.TestCase):
         self.assertEqual(bars["AAA"]["bar_start"], SLOT)
         self.assertEqual((bars["AAA"]["vol"], bars["AAA"]["fnet"]), (100_000, 59_500))
         meta = self.db.rows("snapshot_meta")
-        self.assertEqual([(m["market"], m["asof"], m["symbols"], m["signals"]) for m in meta], [("VN", SLOT, 2, 1)])
-        self.assertEqual(len(self.db.rows("heartbeat")), 1)
+        self.assertEqual([(m["market"], m["slot_start"], m["asof"], m["symbols"], m["signals"]) for m in meta],
+                         [("VN", SLOT, NOW.isoformat(), 2, 1)])
+        hb = self.db.rows("heartbeat")
+        self.assertEqual([(h["market"], h["job"], h["last_seen"]) for h in hb], [("VN", "snapshot", NOW.isoformat())])
+        self.assertEqual((hb[0]["detail"]["status"], hb[0]["detail"]["source"]), ("ok", "KBS"))
         q = {r["symbol"]: r for r in self.db.rows("quotes_latest")}
         self.assertEqual(q["AAA"]["vol"], 200_000)
         self.assertEqual(q["AAA"]["asof"], NOW.isoformat())
@@ -214,14 +230,14 @@ class NormalRunTest(unittest.TestCase):
         self.assertEqual({t: len(self.db.rows(t)) for t in first}, first)
 
     def test_rerun_after_a_crash_cannot_overwrite_bars_with_zeros(self):
-        self.db.fail = {"snapshot_meta"}
+        self.db.fail = {"quotes_latest"}  # crash after the slot was recorded
         with self.assertRaises(Exception):
             run(self.db, self.rows)
         self.db.fail = set()
-        # quotes_latest already moved on, so the rerun sees only a tiny window
         later = {s: {**r, "TT": r["TT"] + 10} for s, r in self.rows.items()}
-        with self.assertLogs("pipeline.run", level="INFO"):
+        with self.assertLogs("pipeline.run", level="INFO") as cm:
             run(self.db, later, now=datetime(2026, 10, 30, 2, 55, tzinfo=UTC))
+        self.assertTrue(any("already" in line for line in cm.output))
         bars = {r["symbol"]: r for r in self.db.rows("bars_30m")}
         self.assertEqual(bars["AAA"]["vol"], 100_000)
 
@@ -236,11 +252,11 @@ class NormalRunTest(unittest.TestCase):
         self.assertNotIn("CCC", [r["symbol"] for r in self.db.rows("bars_30m")])
         self.assertIn("CCC", [r["symbol"] for r in self.db.rows("quotes_latest")])
 
-    def test_heartbeat_failure_is_logged_not_fatal(self):
+    def test_heartbeat_failure_fails_the_run(self):
         self.db.fail = {"heartbeat"}
-        with self.assertLogs("pipeline.run", level="WARNING") as cm:
+        with self.assertLogs("pipeline.run", level="ERROR") as cm:
             code, _ = run(self.db, self.rows)
-        self.assertEqual(code, 0)
+        self.assertEqual(code, 1)
         self.assertTrue(any("heartbeat" in line for line in cm.output))
 
     def test_enough_history_turns_learning_off_and_flags_a_volume_spike(self):
@@ -248,7 +264,7 @@ class NormalRunTest(unittest.TestCase):
             ts = datetime(2026, 10, 30, 2, 30, tzinfo=UTC) - timedelta(days=day)
             for sym in SYMS:
                 vol = 10_000 + 200 * (day % 5)
-                self.db.put("bars_30m", {"symbol": sym, "bar_start": ts.isoformat(), "vol": vol,
+                self.db.put("bars_30m", {"market": "VN", "symbol": sym, "bar_start": ts.isoformat(), "vol": vol,
                                          "val": 1, "fnet": 0, "pt_val": 0})
         self.rows["BBB"] = board(TT=100_000 + 100_000)  # +100k in the window against ~10k usual
         self.go()
@@ -260,6 +276,261 @@ class NormalRunTest(unittest.TestCase):
         self.go()
         blob = json.dumps({t: self.db.rows(t) for t in ("signals", "snapshot_meta", "heartbeat")}, ensure_ascii=False)
         self.assertEqual(find_banned(blob), [])
+
+
+# ---------------------------------------------------------------- review fixes (group B)
+from pipeline.run import actual_minutes, late_minutes, process, _history
+from pipeline import config as _config
+from pipeline.supa import Supabase
+
+TH_VN = _config.load(os.path.join(os.path.dirname(__file__), "..", "config", "thresholds.json"), "VN")
+
+
+class MarketKeyTest(unittest.TestCase):
+    def test_every_written_row_carries_the_market_and_uses_the_0002_keys(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with self.assertLogs("pipeline.run", level="INFO"):
+            run(db, {"AAA": board(FB=60_500), "BBB": board()})  # FakeDB records any violation and run() asserts none
+        for t in ("bars_30m", "signals", "snapshot_meta", "quotes_latest", "heartbeat"):
+            self.assertTrue(db.rows(t), t)
+            self.assertTrue(all(r["market"] == "VN" for r in db.rows(t)), t)
+
+    def test_us_run_writes_us_rows_without_touching_vn_quotes(self):
+        db = FakeDB()
+        db.put("quotes_latest", quote("AAA", market="VN", vol=7))
+        us_now = datetime(2026, 10, 30, 14, 5, tzinfo=UTC)
+        db.put("quotes_latest", quote("AAA", market="US", asof="2026-10-30T13:50:00+00:00"))
+        with self.assertLogs("pipeline.run", level="INFO"):
+            run(db, {"AAA": board(TT=250_000)}, now=us_now, market="US",
+                env_extra={"APCA_API_KEY_ID": "a", "APCA_API_SECRET_KEY": "b"})
+        vn = [r for r in db.rows("quotes_latest") if r["market"] == "VN"]
+        self.assertEqual(vn[0]["vol"], 7)
+        self.assertEqual({r["market"] for r in db.rows("snapshot_meta")}, {"US"})
+
+
+class FeedHealthTest(unittest.TestCase):
+    def test_too_few_symbols_is_an_error_and_writes_nothing(self):
+        db = FakeDB()
+        for s in ("AAA", "BBB", "CCC", "DDD"):
+            db.put("quotes_latest", quote(s))
+        with FakeServer(db) as srv:
+            fetch = lambda syms: {"AAA": {"SB": "AAA", "SRC": "KBS", **board()}}
+            with self.assertLogs("pipeline.run", level="ERROR"):
+                code = main(["--market", "VN"], env_for(srv.url), now=NOW, fetch=fetch,
+                            symbols=["AAA", "BBB", "CCC", "DDD"], sleep=lambda x: None)
+        self.assertEqual(code, 1)
+        self.assertEqual(db.writes, [])
+
+    def test_empty_feed_is_an_error_without_snapshot_or_heartbeat(self):
+        db = FakeDB()
+        with FakeServer(db) as srv:
+            with self.assertLogs("pipeline.run", level="ERROR"):
+                code = main(["--market", "VN"], env_for(srv.url), now=NOW, fetch=lambda syms: {}, symbols=SYMS,
+                            sleep=lambda x: None)
+        self.assertEqual(code, 1)
+        self.assertEqual((db.rows("snapshot_meta"), db.rows("heartbeat")), ([], []))
+
+    def test_half_of_the_symbols_is_enough(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with FakeServer(db) as srv:
+            fetch = lambda syms: {"AAA": {"SB": "AAA", "SRC": "KBS", **board()}}
+            with self.assertLogs("pipeline.run", level="INFO"):
+                code = main(["--market", "VN"], env_for(srv.url), now=NOW, fetch=fetch, symbols=SYMS,
+                            sleep=lambda x: None)
+        self.assertEqual(code, 0)
+
+
+class ClosedGateTest(unittest.TestCase):
+    def test_a_few_matching_symbols_do_not_prove_the_market_is_closed(self):
+        prev = {"A": {"TT": 5, "PTQ": 0, "PTV": 0}}
+        curr = {s: {"TT": 5, "PTQ": 0, "PTV": 0} for s in "ABCDEFGHIJ"}  # only 1 of 10 comparable
+        self.assertFalse(closed(prev, curr))
+
+    def test_negotiated_deals_count_as_movement(self):
+        prev = {f"S{i}": {"TT": 100, "PTQ": 0, "PTV": 0} for i in range(20)}
+        curr = {f"S{i}": {"TT": 100, "PTQ": 10, "PTV": 5} for i in range(20)}
+        self.assertFalse(closed(prev, curr))
+
+    def test_closed_run_records_a_closed_heartbeat_and_fails_on_an_unlisted_weekday(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s, vol=200_000))
+        with self.assertLogs("pipeline.run", level="WARNING") as cm:
+            code, _ = run(db, {s: board() for s in SYMS})
+        self.assertEqual(code, 1)
+        self.assertTrue(any("closed" in line for line in cm.output))
+        self.assertEqual(db.rows("heartbeat")[0]["detail"]["status"], "closed")
+        self.assertEqual(db.rows("snapshot_meta"), [])
+
+    def test_the_run_after_the_close_still_records_negotiated_deals(self):
+        db = FakeDB()
+        now = datetime(2026, 10, 30, 8, 5, tzinfo=UTC)  # 15:05 in Ho Chi Minh, volumes frozen since 14:45
+        for s in SYMS:
+            db.put("quotes_latest", quote(s, vol=200_000, asof="2026-10-30T07:50:00+00:00"))
+        rows = {s: board(PTQ=40_000, PTV=1_000_000_000) for s in SYMS}
+        with self.assertLogs("pipeline.run", level="INFO"):
+            code, _ = run(db, rows, now=now)
+        self.assertEqual(code, 0)
+        bars = db.rows("bars_30m")
+        self.assertEqual({b["pt_val"] for b in bars}, {1_000_000_000})
+        self.assertEqual(len(db.rows("snapshot_meta")), 1)
+
+
+class HistoryLocalTimeTest(unittest.TestCase):
+    def test_us_history_matches_across_the_november_1_time_change(self):
+        db = FakeDB()
+        # 10:00 New York was 14:00 UTC under EDT and is 15:00 UTC under EST
+        for day in (28, 29, 30):
+            db.put("bars_30m", {"market": "US", "symbol": "AAA", "bar_start": f"2026-10-{day}T14:00:00+00:00",
+                                "vol": 1000 + day, "val": 1, "fnet": 0, "pt_val": 0})
+        now = datetime(2026, 11, 2, 15, 5, tzinfo=UTC)  # Monday 10:05 EST
+        slot = datetime(2026, 11, 2, 15, 0, tzinfo=UTC)
+        hist = _history(db_client(db), "US", slot, now)
+        self.assertEqual(sorted(hist["AAA"]), [1028, 1029, 1030])
+
+    def test_bars_of_other_half_hours_and_other_markets_are_ignored(self):
+        db = FakeDB()
+        db.put("bars_30m", {"market": "US", "symbol": "AAA", "bar_start": "2026-10-29T14:30:00+00:00",
+                            "vol": 5, "val": 1, "fnet": 0, "pt_val": 0})
+        db.put("bars_30m", {"market": "VN", "symbol": "AAA", "bar_start": "2026-10-29T14:00:00+00:00",
+                            "vol": 6, "val": 1, "fnet": 0, "pt_val": 0})
+        now = datetime(2026, 10, 30, 14, 5, tzinfo=UTC)
+        hist = _history(db_client(db), "US", datetime(2026, 10, 30, 14, 0, tzinfo=UTC), now)
+        self.assertEqual(hist, {})
+
+
+def db_client(fake):
+    srv = FakeServer(fake).__enter__()
+    db_client.servers.append(srv)
+    return Supabase(srv.url, "K", sleep=lambda x: None)
+
+
+db_client.servers = []
+
+
+def tearDownModule():
+    for srv in db_client.servers:
+        srv.__exit__(None, None, None)
+
+
+class WindowMinutesTest(unittest.TestCase):
+    def test_minutes_come_from_the_real_previous_snapshot(self):
+        prev = datetime(2026, 10, 30, 2, 20, tzinfo=UTC)  # 09:20
+        self.assertEqual(actual_minutes("VN", prev, NOW), 30)
+        self.assertEqual(actual_minutes("VN", datetime(2026, 10, 30, 2, 40, tzinfo=UTC), NOW), 10)
+
+    def test_a_window_over_one_and_a_half_slots_drops_s1_with_a_warning(self):
+        prev = datetime(2026, 10, 30, 2, 0, tzinfo=UTC)  # 09:00 -> 09:50 is 50 minutes
+        with self.assertLogs("pipeline.run", level="WARNING") as cm:
+            self.assertEqual(actual_minutes("VN", prev, NOW), 0)
+        self.assertTrue(any("S1" in line for line in cm.output))
+
+    def test_first_run_of_the_day_counts_from_the_open(self):
+        yesterday = datetime(2026, 10, 29, 8, 5, tzinfo=UTC)
+        self.assertEqual(actual_minutes("VN", yesterday, datetime(2026, 10, 30, 2, 20, tzinfo=UTC)), 20)
+
+    def test_no_previous_snapshot_counts_from_the_open(self):
+        self.assertEqual(actual_minutes("VN", None, datetime(2026, 10, 30, 2, 20, tzinfo=UTC)), 20)
+
+    def test_late_runs_are_measured_against_the_scheduled_time(self):
+        self.assertEqual(late_minutes("VN", NOW), 0)
+        self.assertEqual(late_minutes("VN", datetime(2026, 10, 30, 3, 10, tzinfo=UTC)), 20)
+
+
+class FirstRunOfDayTest(unittest.TestCase):
+    def test_yesterdays_quote_is_treated_as_zero_so_the_first_window_runs_from_the_open(self):
+        prev = [quote("AAA", vol=900_000_000, asof="2026-10-29T08:05:00+00:00")]
+        now = datetime(2026, 10, 30, 2, 20, tzinfo=UTC)
+        bars, _, _ = process("VN", now, {"AAA": {"SB": "AAA", **board(TT=50_000)}}, prev, {}, TH_VN)
+        self.assertEqual(bars[0]["vol"], 50_000)
+
+
+class DeltaDropLogTest(unittest.TestCase):
+    def test_dropped_symbols_are_counted_in_a_warning(self):
+        from pipeline.compare import delta_all
+        prev = {"A": {"TT": 10, "TV": 0, "FB": 0, "FS": 0, "PTQ": 0, "PTV": 0}}
+        curr = {"A": {"TT": 5, "TV": 0, "FB": 0, "FS": 0, "PTQ": 0, "PTV": 0}}
+        with self.assertLogs("pipeline.compare", level="WARNING") as cm:
+            self.assertEqual(delta_all(prev, curr), {})
+        self.assertIn("1", cm.output[0])
+
+
+class SourceSwitchTest(unittest.TestCase):
+    def test_vci_rows_without_negotiated_data_keep_the_previous_values_and_do_not_drop_the_symbol(self):
+        prev = [quote("AAA", pt_vol=900, pt_val=500_000)]
+        row = {"SB": "AAA", "SRC": "VCI", "PT": False, **board(PTQ=0, PTV=0)}
+        bars, _, quotes = process("VN", NOW, {"AAA": row}, prev, {}, TH_VN)
+        self.assertEqual([b["symbol"] for b in bars], ["AAA"])
+        self.assertEqual(bars[0]["pt_val"], 0)
+        self.assertEqual((quotes[0]["pt_vol"], quotes[0]["pt_val"]), (900, 500_000))
+
+    def test_heartbeat_names_the_source_and_flags_missing_negotiated_data(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with FakeServer(db) as srv:
+            fetch = lambda syms: {k: {"SB": k, "SRC": "VCI", "PT": False, **board()} for k in SYMS}
+            with self.assertLogs("pipeline.run", level="INFO"):
+                main(["--market", "VN"], env_for(srv.url), now=NOW, fetch=fetch, symbols=SYMS, sleep=lambda x: None)
+        detail = db.rows("heartbeat")[0]["detail"]
+        self.assertEqual((detail["source"], detail["pt"]), ("VCI", False))
+
+    def test_many_symbols_without_a_window_trigger_a_warning(self):
+        db = FakeDB()
+        db.put("quotes_latest", quote("AAA"))
+        with FakeServer(db) as srv:
+            fetch = lambda syms: {k: {"SB": k, "SRC": "KBS", **board()} for k in ("AAA", "BBB", "CCC")}
+            with self.assertLogs("pipeline.run", level="WARNING") as cm:
+                main(["--market", "VN"], env_for(srv.url), now=NOW, fetch=fetch, symbols=["AAA", "BBB", "CCC"],
+                     sleep=lambda x: None)
+        self.assertTrue(any("have a window" in line for line in cm.output))
+
+
+class WriteOrderTest(unittest.TestCase):
+    def test_the_slot_is_recorded_before_the_quotes_move_on(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with self.assertLogs("pipeline.run", level="INFO"):
+            run(db, {"AAA": board(FB=60_500), "BBB": board()})
+        self.assertLess(db.writes.index("snapshot_meta"), db.writes.index("quotes_latest"))
+
+
+class LateRunTest(unittest.TestCase):
+    LATE = datetime(2026, 10, 30, 3, 12, tzinfo=UTC)  # 10:12: the 09:50 run, delayed by 22 minutes
+
+    def test_late_minutes_are_counted_from_the_latest_scheduled_run(self):
+        self.assertEqual(late_minutes("VN", self.LATE), 22)
+
+    def test_a_delayed_run_keeps_the_slot_it_was_scheduled_for(self):
+        self.assertEqual(slot_start("VN", self.LATE), datetime(2026, 10, 30, 2, 30, tzinfo=UTC))
+
+    def test_a_delayed_run_does_not_block_the_next_scheduled_one(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with self.assertLogs("pipeline.run", level="INFO"):
+            run(db, {"AAA": board(TT=250_000), "BBB": board(TT=250_000)}, now=self.LATE)
+        next_run = datetime(2026, 10, 30, 3, 21, tzinfo=UTC)  # 10:21, the 10:20 run
+        with self.assertLogs("pipeline.run", level="INFO") as cm:
+            run(db, {"AAA": board(TT=300_000), "BBB": board(TT=300_000)}, now=next_run)
+        self.assertFalse(any("already" in line for line in cm.output))
+        self.assertEqual(len(db.rows("snapshot_meta")), 2)
+
+    def test_the_run_logs_a_warning_when_it_is_late(self):
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s))
+        with self.assertLogs("pipeline.run", level="WARNING") as cm:
+            run(db, {"AAA": board(TT=250_000), "BBB": board(TT=250_000)}, now=self.LATE)
+        self.assertTrue(any("late" in line for line in cm.output))
+
+    def test_a_run_on_time_does_not_warn(self):
+        self.assertLessEqual(late_minutes("VN", NOW), 10)
 
 
 if __name__ == "__main__":

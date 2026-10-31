@@ -39,6 +39,11 @@ class Supabase:
 
     def upsert(self, table, rows, on_conflict, merge=True):
         """merge=False keeps the row that is already there (first writer wins), so a rerun cannot overwrite it."""
+        if "market" in on_conflict.split(","):
+            # every market table is keyed by market; a row without it would land in the default market
+            bad = [r for r in rows if r.get("market") not in ("VN", "US")]
+            if bad:
+                raise ValueError(f"{table}: {len(bad)} row(s) without a valid market")
         q = urllib.parse.urlencode({"on_conflict": on_conflict})
         mode = "merge-duplicates" if merge else "ignore-duplicates"
         for i in range(0, len(rows), BATCH):

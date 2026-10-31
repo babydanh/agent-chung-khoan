@@ -46,14 +46,34 @@ class FindZonesTest(unittest.TestCase):
 
     def test_without_atr_or_bands_it_degrades_without_error(self):
         self.assertEqual(find_zones(100, PIV, BOL, None), [])
-        only_pivot = find_zones(100, PIV, None, 40.0)
-        self.assertTrue(only_pivot)
+        self.assertEqual(find_zones(100, PIV, None, 40.0), [])  # one family alone is not a confluence
         self.assertEqual(find_zones(100, None, None, ATR), [])
 
     def test_input_levels_are_not_mutated(self):
         piv, bol = dict(PIV), dict(BOL)
         find_zones(100, piv, bol, ATR)
         self.assertEqual((piv, bol), (PIV, BOL))
+
+
+class ZoneShapeTest(unittest.TestCase):
+    def test_pivot_levels_of_a_quiet_day_alone_are_not_a_zone(self):
+        tight = pivot(100.2, 99.8, 100.0)  # all five levels within 0.8 of each other
+        far_bands = {"lower": 60.0, "mid": 70.0, "upper": 80.0}
+        self.assertEqual(find_zones(100, tight, far_bands, 4.0), [])
+        self.assertEqual(find_zones(100, tight, None, 4.0), [])
+
+    def test_a_zone_needs_a_source_from_each_family(self):
+        for z in find_zones(100, PIV, BOL, ATR, tol_k=5.0):
+            families = {s.split()[0] for s in z["sources"]}
+            self.assertEqual(families, {"Pivot", "Bollinger"})
+
+    def test_zone_width_never_exceeds_the_tolerance(self):
+        piv = {"P": 100.0, "R1": 101.5, "S1": 103.0, "R2": 104.5, "S2": 106.0}  # chain of 1.5 steps
+        bands = {"lower": 99.0, "mid": 102.0, "upper": 107.0}
+        zones = find_zones(100, piv, bands, 4.0)  # tolerance 2.0
+        self.assertTrue(zones)
+        for z in zones:
+            self.assertLessEqual(z["high"] - z["low"], 2.0)
 
 
 class DescribeTest(unittest.TestCase):

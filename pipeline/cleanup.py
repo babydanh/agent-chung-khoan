@@ -48,6 +48,7 @@ def run(db, now):
         size = None
     level, msg = db_report(size)
     getattr(log, level)(msg)
+    return 1 if level == "warning" else 0  # an unknown or oversized database must fail the job, not just log
 
 
 def main(env, now=None):
@@ -56,8 +57,7 @@ def main(env, now=None):
     except RuntimeError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    run(db, now or datetime.now(timezone.utc))
-    return 0
+    return run(db, now or datetime.now(timezone.utc))
 
 
 if __name__ == "__main__":

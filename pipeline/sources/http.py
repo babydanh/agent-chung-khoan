@@ -1,18 +1,21 @@
 """JSON over HTTP with retries (urllib only). Waits 2, 4 and 8 seconds between the four attempts."""
-import gzip
 import json
 import urllib.error
 import urllib.request
+import zlib
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36"
 DELAYS = (2, 4, 8)
+MAX_BYTES = 20_000_000  # a full KBS board is a few hundred KB; anything near this is wrong
+ERROR_BODY_BYTES = 200
 
 
 class SourceError(Exception):
     """A data source could not deliver usable data."""
 
 
-def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout=30, method=None, text=False):
+def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout=30, method=None, text=False,
+                 max_bytes=MAX_BYTES):
     """POST payload as JSON (GET when payload is None) and return the decoded body (None when it is empty)."""
     import time
     sleep = sleep or time.sleep
@@ -27,17 +30,22 @@ def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout
         req = urllib.request.Request(url, data=data, headers=hdrs, method=method or ("POST" if data is not None else "GET"))
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
-                raw = r.read()
+                raw = r.read(max_bytes + 1)
+            if len(raw) > max_bytes:
+                raise SourceError(f"response is larger than {max_bytes} bytes")
             if raw[:2] == b"\x1f\x8b":
-                raw = gzip.decompress(raw)
+                raw = zlib.decompressobj(zlib.MAX_WBITS | 16).decompress(raw, max_bytes + 1)
+                if len(raw) > max_bytes:
+                    raise SourceError(f"decompressed response is larger than {max_bytes} bytes")
             if text:
                 return raw.decode("utf-8", errors="replace")
             return json.loads(raw) if raw.strip() else None
         except urllib.error.HTTPError as e:
-            last = e
+            snippet = e.read(ERROR_BODY_BYTES).decode("utf-8", errors="replace").strip()
+            last = f"HTTPError: HTTP Error {e.code}: {e.reason}" + (f" - {snippet}" if snippet else "")
             e.close()
             if e.code < 500 and e.code != 429:
                 break  # a client error will not fix itself
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
-            last = e
-    raise SourceError(f"{type(last).__name__}: {last}")
+            last = f"{type(e).__name__}: {e}"
+    raise SourceError(last)

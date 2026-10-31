@@ -1,7 +1,8 @@
 """One snapshot run: python -m pipeline.run --market VN|US.
 
-Gates (run window, market closed) -> fetch board -> window numbers vs the previous snapshot -> signals ->
-upsert to Supabase. Re-running a slot never changes what the first run wrote.
+Gates (run window, feed health, market closed) -> window numbers vs the previous snapshot -> signals ->
+upsert to Supabase. Every row carries its market and uses the keys of migration 0002. Re-running a slot never
+changes what the first run wrote.
 """
 import argparse
 import logging
@@ -18,6 +19,12 @@ from pipeline.supa import from_env
 log = logging.getLogger("pipeline.run")
 ROOT = Path(__file__).resolve().parent.parent
 CLOSED_SHARE = 0.95
+MIN_LIVE_SHARE = 0.5  # fewer live symbols than this means the feed is broken
+MIN_WINDOW_SHARE = 0.9
+MAX_WINDOW_SLOTS = 1.5  # a window longer than this many slots is no basis for a per-minute comparison
+SLOT_MINUTES = 30
+LATE_WARN_MINUTES = 10
+JOB = "snapshot"
 BASELINE_DAYS = 20
 HISTORY_LOOKBACK = timedelta(days=45)
 
@@ -31,10 +38,27 @@ RUNS = {
 SESSIONS = {"VN": signals.VN_SESSIONS, "US": signals.US_SESSIONS}
 
 
+def _scheduled(market, local):
+    """Latest scheduled run time of that local day at or before `local`, as a datetime; None before the first."""
+    best = None
+    for t in RUNS[market]:
+        at = local.replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
+        if at <= local and (best is None or at > best):
+            best = at
+    return best
+
+
 def slot_start(market, now):
-    """Start of the local half hour containing now, as an aware UTC datetime."""
+    """Slot of the scheduled run this execution belongs to (a delayed run keeps its own slot), as UTC."""
     local = now.astimezone(calendar.TZ[market])
-    return local.replace(minute=local.minute // 30 * 30, second=0, microsecond=0).astimezone(timezone.utc)
+    ref = _scheduled(market, local) or local
+    return ref.replace(minute=ref.minute // 30 * 30, second=0, microsecond=0).astimezone(timezone.utc)
+
+
+def late_minutes(market, now):
+    local = now.astimezone(calendar.TZ[market])
+    ref = _scheduled(market, local)
+    return 0 if ref is None else int((local - ref).total_seconds() // 60)
 
 
 def window_minutes(market, run_time):
@@ -55,12 +79,27 @@ def slot_minutes(market, slot):
     return None
 
 
+def actual_minutes(market, prev_asof, now):
+    """Trading minutes since the real previous snapshot (since the open on a new day); 0 drops S1 when too long."""
+    tz = calendar.TZ[market]
+    local = now.astimezone(tz)
+    prev = prev_asof.astimezone(tz) if prev_asof else None
+    start = prev.time() if prev and prev.date() == local.date() else SESSIONS[market][0][0]
+    m = signals.trading_minutes(start, local.time(), SESSIONS[market])
+    if m > MAX_WINDOW_SLOTS * SLOT_MINUTES:
+        log.warning("window of %d trading minutes is too long for a per-minute volume check: S1 skipped", m)
+        return 0
+    return m
+
+
 def closed(prev_rows, curr_rows):
-    """True when at least 95% of the symbols live in both snapshots show the same cumulative volume."""
+    """True when the market looks closed: at least half of the symbols are comparable and 95% of those show no
+    movement in volume or negotiated deals since the previous snapshot."""
     both = [s for s in curr_rows if s in prev_rows and "TT" in curr_rows[s] and "TT" in prev_rows[s]]
-    if not both:
+    if not both or len(both) < MIN_LIVE_SHARE * len(curr_rows):
         return False
-    same = sum(1 for s in both if curr_rows[s]["TT"] == prev_rows[s]["TT"])
+    keys = ("TT", "PTQ", "PTV")
+    same = sum(1 for s in both if all(curr_rows[s].get(k, 0) == prev_rows[s].get(k, 0) for k in keys))
     return same / len(both) >= CLOSED_SHARE
 
 
@@ -69,46 +108,81 @@ def _quote_to_row(q):
             "FS": q["f_sell"], "PTQ": q["pt_vol"], "PTV": q["pt_val"]}
 
 
-def _row_to_quote(sym, r, asof):
+def _row_to_quote(market, sym, r, asof):
     big = lambda v: int(round(v or 0))
-    return {"symbol": sym, "exchange": r.get("EX") or "", "price": r.get("CP"), "ref_price": r.get("RE"),
-            "ceil_price": r.get("CL"), "floor_price": r.get("FL"), "vol": big(r.get("TT")),
-            "val": big(r.get("TV")), "f_buy": big(r.get("FB")), "f_sell": big(r.get("FS")),
+    return {"market": market, "symbol": sym, "exchange": r.get("EX") or "", "price": r.get("CP"),
+            "ref_price": r.get("RE"), "ceil_price": r.get("CL"), "floor_price": r.get("FL"),
+            "vol": big(r.get("TT")), "val": big(r.get("TV")), "f_buy": big(r.get("FB")), "f_sell": big(r.get("FS")),
             "f_room": big(r.get("FR")), "pt_vol": big(r.get("PTQ")), "pt_val": big(r.get("PTV")), "asof": asof}
 
 
+def _carry_negotiated(rows, prev_rows):
+    """A source without negotiated-deal data (VCI) keeps the previous values, so the window shows no change
+    instead of a negative one (which would silently drop the symbol) and the next source switch stays sane."""
+    out = {}
+    for sym, r in rows.items():
+        if r.get("PT") is False:
+            p = prev_rows.get(sym, {})
+            r = {**r, "PTQ": p.get("PTQ", 0), "PTV": p.get("PTV", 0)}
+        out[sym] = r
+    return out
+
+
 def _history(db, market, slot, now):
-    """symbol -> window volumes of the same slot on past days (newest first, at most 20)."""
+    """symbol -> window volumes of the same local half hour on past days (newest first, at most 20)."""
+    tz = calendar.TZ[market]
     since = (now - HISTORY_LOOKBACK).isoformat()
-    want = (slot.hour, slot.minute)
+    want = slot.astimezone(tz)
     per_day = {}
-    for r in db.select_all("bars_30m", {"select": "symbol,bar_start,vol", "bar_start": "gte." + since}):
-        ts = datetime.fromisoformat(r["bar_start"]).astimezone(timezone.utc)
-        if (ts.hour, ts.minute) == want and ts.date() < slot.date():
+    rows = db.select_all("bars_30m", {"select": "symbol,bar_start,vol", "market": "eq." + market,
+                                      "bar_start": "gte." + since})
+    for r in rows:
+        ts = datetime.fromisoformat(r["bar_start"]).astimezone(tz)  # local clock: stays aligned across DST changes
+        if (ts.hour, ts.minute) == (want.hour, want.minute) and ts.date() < want.date():
             per_day.setdefault(r["symbol"], {})[ts.date()] = r["vol"]
     return {s: [v for _, v in sorted(days.items(), reverse=True)[:BASELINE_DAYS]] for s, days in per_day.items()}
 
 
+def _prev_asof(prev_quotes):
+    stamps = [datetime.fromisoformat(q["asof"]) for q in prev_quotes if q.get("asof")]
+    return max(stamps) if stamps else None
+
+
 def process(market, now, rows, prev_quotes, history, th):
-    """Pure core: (bars, signal rows, quote rows) for one run."""
+    """Core: (bars, signal rows, quote rows) for one run."""
     slot = slot_start(market, now)
+    tz = calendar.TZ[market]
+    prev_asof = _prev_asof(prev_quotes)
     prev_rows = {q["symbol"]: _quote_to_row(q) for q in prev_quotes}
-    deltas = compare.delta_all(prev_rows, rows)
-    minutes = slot_minutes(market, slot)
+    rows = _carry_negotiated(rows, prev_rows)
+    if prev_asof and prev_asof.astimezone(tz).date() == now.astimezone(tz).date():
+        base = prev_rows
+    else:  # first run of the day: yesterday's totals are not a baseline, count from the open
+        base = {s: {"TT": 0, "TV": 0, "FB": 0, "FS": 0, "PTQ": 0, "PTV": 0} for s in rows}
+    deltas = compare.delta_all(base, rows)
+    minutes = actual_minutes(market, prev_asof, now)
+    hist_minutes = slot_minutes(market, slot)
+    hist_minutes = SLOT_MINUTES if hist_minutes is None else hist_minutes
     bars, sigs = [], []
     for sym, d in deltas.items():
-        bars.append({"symbol": sym, "bar_start": slot.isoformat(), "vol": int(d["vol"]), "val": int(round(d["val"])),
-                     "fnet": int(d["fnet"]), "pt_val": int(round(d["pt_val"]))})
+        bars.append({"market": market, "symbol": sym, "bar_start": slot.isoformat(), "vol": int(d["vol"]),
+                     "val": int(round(d["val"])), "fnet": int(d["fnet"]), "pt_val": int(round(d["pt_val"]))})
         hist = history.get(sym, [])
-        kw = {}
-        if minutes is not None:
-            kw = {"minutes": minutes, "history_minutes": [minutes] * len(hist)}
-        res = signals.evaluate(d, hist, th, market=market, **kw)
+        res = signals.evaluate(d, hist, th, market=market, minutes=minutes,
+                               history_minutes=[hist_minutes] * len(hist))
         if res["level"] > 0:
-            sigs.append({"asof": slot.isoformat(), "symbol": sym, "level": res["level"],
+            sigs.append({"market": market, "asof": slot.isoformat(), "symbol": sym, "level": res["level"],
                          "learning": res["learning"], "items": res["signals"]})
-    quotes = [_row_to_quote(sym, r, now.isoformat()) for sym, r in rows.items()]
+    if len(deltas) < MIN_WINDOW_SHARE * len(rows):
+        log.warning("only %d of %d symbols have a window (new symbols, session reset or a source switch)",
+                    len(deltas), len(rows))
+    quotes = [_row_to_quote(market, sym, r, now.isoformat()) for sym, r in rows.items()]
     return bars, sigs, quotes
+
+
+def _heartbeat(db, market, now, detail):
+    db.upsert("heartbeat", [{"market": market, "job": JOB, "last_seen": now.isoformat(), "detail": detail}],
+              "market,job")
 
 
 def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
@@ -133,10 +207,18 @@ def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
     if not calendar.is_run_window(market, now, cal):
         log.info("outside the run window, nothing to do")
         return 0
+    late = late_minutes(market, now)
+    if late > LATE_WARN_MINUTES:
+        log.warning("run is late by %d minutes (cron delay); it keeps the slot of its scheduled time", late)
 
     th = config.load(ROOT / "config" / "thresholds.json", market)
     if symbols is None:
         symbols = calendar.load(ROOT / "config" / "symbols.json")[market]
+    slot_dt = slot_start(market, now)
+    slot = slot_dt.isoformat()
+    if db.select("snapshot_meta", {"market": "eq." + market, "slot_start": "eq." + slot, "select": "id"}):
+        log.info("already ran slot %s", slot)
+        return 0
     if fetch is None:
         if market == "VN":
             fetch = lambda syms: sources.fetch_vn(syms, sleep=sleep)
@@ -147,28 +229,36 @@ def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
     except SourceError as e:
         log.error("no data source answered: %s", e)
         return 1
+    need = max(1, MIN_LIVE_SHARE * len(symbols))
+    if len(rows) < need:
+        log.error("feed has %d live symbols of %d requested (need %d): nothing written", len(rows), len(symbols), need)
+        return 1
+    source = next(iter(rows.values())).get("SRC", "unknown")
+    pt = all(r.get("PT") is not False for r in rows.values())
 
-    slot = slot_start(market, now).isoformat()
-    if db.select("snapshot_meta", {"market": "eq." + market, "asof": "eq." + slot, "select": "id"}):
-        log.info("already ran slot %s", slot)
-        return 0
-    prev_quotes = db.select_all("quotes_latest", {"select": "*", "symbol": "in.(" + ",".join(rows) + ")"})
+    prev_quotes = db.select_all("quotes_latest", {"select": "*", "market": "eq." + market})
     prev_rows = {q["symbol"]: _quote_to_row(q) for q in prev_quotes}
-    if closed(prev_rows, rows):
-        log.info("closed: volumes unchanged since the previous snapshot")
-        return 0
+    detail = {"source": source, "pt": pt, "symbols": len(rows)}
+    if slot_minutes(market, slot_dt) != 0 and closed(prev_rows, rows):
+        # the run after the close is exempt: negotiated deals after the bell are the point of that run
+        log.warning("closed: volumes unchanged since the previous snapshot")
+        _heartbeat(db, market, now, {**detail, "status": "closed"})
+        log.error("a weekday not listed in config/calendar.json looks closed: check for a missing holiday")
+        return 1
 
-    bars, sigs, quotes = process(market, now, rows, prev_quotes, _history(db, market, slot_start(market, now), now), th)
-    db.upsert("bars_30m", bars, "symbol,bar_start", merge=False)
-    db.upsert("signals", sigs, "asof,symbol", merge=False)
-    db.upsert("quotes_latest", quotes, "symbol")
-    db.upsert("snapshot_meta", [{"market": market, "asof": slot, "symbols": len(rows), "signals": len(sigs)}],
-              "market,asof", merge=False)
+    bars, sigs, quotes = process(market, now, rows, prev_quotes, _history(db, market, slot_dt, now), th)
+    db.upsert("bars_30m", bars, "market,symbol,bar_start", merge=False)
+    db.upsert("signals", sigs, "market,asof,symbol", merge=False)
+    # the slot is recorded before the quotes move on: a crash in between makes the rerun skip, never overwrite
+    db.upsert("snapshot_meta", [{"market": market, "asof": now.isoformat(), "slot_start": slot,
+                                 "symbols": len(rows), "signals": len(sigs)}], "market,slot_start", merge=False)
+    db.upsert("quotes_latest", quotes, "market,symbol")
     try:
-        db.upsert("heartbeat", [{"market": market, "asof": now.isoformat(), "status": "ok"}], "market")
+        _heartbeat(db, market, now, {**detail, "status": "ok", "bars": len(bars), "signals": len(sigs)})
     except SourceError as e:
-        log.warning("heartbeat not written: %s", e)
-    log.info("slot=%s symbols=%d bars=%d signals=%d", slot, len(rows), len(bars), len(sigs))
+        log.error("heartbeat not written: %s", e)
+        return 1
+    log.info("slot=%s source=%s symbols=%d bars=%d signals=%d", slot, source, len(rows), len(bars), len(sigs))
     return 0
 
 
