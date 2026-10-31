@@ -11,7 +11,11 @@ ERROR_BODY_BYTES = 200
 
 
 class SourceError(Exception):
-    """A data source could not deliver usable data."""
+    """A data source could not deliver usable data. `status` is the HTTP status when there was one."""
+
+    def __init__(self, message, status=None):
+        super().__init__(message)
+        self.status = status
 
 
 def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout=30, method=None, text=False,
@@ -23,7 +27,7 @@ def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout
     hdrs = {"User-Agent": UA, "Accept-Encoding": "gzip", **(headers or {})}
     if data is not None:
         hdrs["Content-Type"] = "application/json"
-    last = None
+    last, status = None, None
     for attempt in range(retries + 1):
         if attempt:
             sleep(DELAYS[min(attempt - 1, len(DELAYS) - 1)])
@@ -42,10 +46,11 @@ def request_json(url, payload=None, headers=None, retries=3, sleep=None, timeout
             return json.loads(raw) if raw.strip() else None
         except urllib.error.HTTPError as e:
             snippet = e.read(ERROR_BODY_BYTES).decode("utf-8", errors="replace").strip()
+            status = e.code
             last = f"HTTPError: HTTP Error {e.code}: {e.reason}" + (f" - {snippet}" if snippet else "")
             e.close()
             if e.code < 500 and e.code != 429:
                 break  # a client error will not fix itself
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
-            last = f"{type(e).__name__}: {e}"
-    raise SourceError(last)
+            status, last = None, f"{type(e).__name__}: {e}"
+    raise SourceError(last, status=status)

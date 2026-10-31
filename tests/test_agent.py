@@ -45,10 +45,10 @@ class TableTest(unittest.TestCase):
 
 
 class RequestBodyTest(unittest.TestCase):
-    def test_schema_output_no_thinking_and_news_kept_apart_from_instructions(self):
+    def test_schema_output_thinking_off_and_news_kept_apart_from_instructions(self):
         body = request_body(MODEL, build_table(ITEMS, "09:50"), NEWS)
         self.assertEqual(body["output_config"]["format"], {"type": "json_schema", "schema": SCHEMA})
-        self.assertNotIn("thinking", body)
+        self.assertEqual(body["thinking"], {"type": "disabled"})
         self.assertNotIn("Hòa Phát", body["system"])
         self.assertNotIn("BỎ QUA", body["system"])
         news_block = [b for b in body["messages"][0]["content"] if "BỎ QUA" in b["text"]]
@@ -61,13 +61,8 @@ class RequestBodyTest(unittest.TestCase):
         self.assertNotIn("SECRET-SUMMARY", json.dumps(body))
         self.assertNotIn("example.com", json.dumps(body))
 
-    def test_effort_is_sent_only_to_models_that_accept_it(self):
-        t = build_table(ITEMS, "09:50")
-        self.assertNotIn("effort", request_body("claude-haiku-4-5", t, NEWS)["output_config"])
-        self.assertEqual(request_body("claude-sonnet-5-5", t, NEWS)["output_config"]["effort"], "low")
-
-    def test_model_is_a_current_haiku(self):
-        self.assertEqual(MODEL, "claude-haiku-4-5")
+    def test_effort_is_low(self):
+        self.assertEqual(request_body(MODEL, build_table(ITEMS, "09:50"), NEWS)["output_config"]["effort"], "low")
 
 
 class MakeBulletinTest(unittest.TestCase):

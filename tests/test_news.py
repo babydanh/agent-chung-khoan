@@ -115,7 +115,8 @@ class FetchHealthTest(unittest.TestCase):
             raise OSError("down")
 
         with self.assertLogs("pipeline.news", level="ERROR") as cm:
-            self.assertEqual(fetch_all({"A": "https://a/", "B": "https://b/"}, KNOWN, get, now=NOW), [])
+            with self.assertRaises(NewsError):
+                fetch_all({"A": "https://a/", "B": "https://b/"}, KNOWN, get, now=NOW)
         self.assertTrue(any("no feed" in line for line in cm.output))
 
     def test_a_bad_feed_logs_the_traceback(self):
@@ -123,7 +124,8 @@ class FetchHealthTest(unittest.TestCase):
             return "<rss><channel><item>"
 
         with self.assertLogs("pipeline.news", level="WARNING") as cm:
-            fetch_all({"A": "https://a/"}, KNOWN, get, now=NOW)
+            with self.assertRaises(NewsError):  # the only feed failed
+                fetch_all({"A": "https://a/"}, KNOWN, get, now=NOW)
         self.assertTrue(any("Traceback" in line for line in cm.output))
 
     def test_headlines_older_than_three_days_are_dropped(self):
@@ -131,14 +133,14 @@ class FetchHealthTest(unittest.TestCase):
             return XML  # a1 is from 2026-10-30, a3 from 2026-10-29
 
         later = datetime(2026, 11, 2, 12, 0, tzinfo=timezone.utc)
-        items = fetch_all({"A": "https://a/"}, KNOWN, get, now=later)
+        items = fetch_all({"A": "https://a/"}, KNOWN, get, now=later).items
         self.assertEqual([i["link"] for i in items if i["published"]], [])
         near = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
-        kept = fetch_all({"A": "https://a/"}, KNOWN, get, now=near)
+        kept = fetch_all({"A": "https://a/"}, KNOWN, get, now=near).items
         self.assertEqual(len([i for i in kept if i["published"]]), 2)
 
     def test_headlines_without_a_date_are_kept(self):
-        items = fetch_all({"A": "https://a/"}, KNOWN, lambda u: XML, now=NOW)
+        items = fetch_all({"A": "https://a/"}, KNOWN, lambda u: XML, now=NOW).items
         self.assertIn(None, [i["published"] for i in items])
 
 
@@ -158,7 +160,7 @@ class FetchAllTest(unittest.TestCase):
 
             feeds = {"A": s.url + "/a", "B": s.url + "/bad", "C": s.url + "/c"}
             with self.assertLogs("pipeline.news", level="WARNING"):
-                items = fetch_all(feeds, KNOWN, get, now=NOW)
+                items = fetch_all(feeds, KNOWN, get, now=NOW).items
         links = [i["link"] for i in items]
         self.assertEqual(len(links), len(set(links)))
         self.assertEqual(links[0], "https://example.com/a1")  # 02:15Z beats 20:00Z of the day before

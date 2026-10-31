@@ -19,7 +19,8 @@ def build(market, bulletin_time, now):
     """Notification for a new bulletin.
 
     {"status": "send", ...} now, or {"status": "defer", ..., "send_at": ISO time} when a US bulletin lands in the
-    quiet hours: it is held until 07:00 Vietnam time, never dropped. The text is the same either way.
+    quiet hours. Nothing here stores or re-sends: the caller must keep a deferred notification and send it at
+    `send_at` (07:00 Vietnam time); that queue is not built yet. The text is the same either way.
     """
     if market not in ("VN", "US"):
         raise ValueError(f"unknown market {market}")
