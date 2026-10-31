@@ -75,6 +75,31 @@ class RunTest(unittest.TestCase):
         self.assertTrue(any(p.startswith("/rest/v1/signals?asof=lt.") for p in deletes))
         self.assertTrue(any("db_mb=12.0" in line for line in cm.output))
 
+    def test_exit_status_is_zero_when_the_size_is_known_and_small(self):
+        with FakeServer(self.handler([], size=12.0)) as s:
+            with self.assertLogs("pipeline.cleanup", level="INFO"):
+                self.assertEqual(run(Supabase(s.url, "K", sleep=lambda x: None), NOW), 0)
+
+    def test_over_400_mb_fails_the_run(self):
+        with FakeServer(self.handler([], size=450.0)) as s:
+            with self.assertLogs("pipeline.cleanup", level="WARNING"):
+                self.assertEqual(run(Supabase(s.url, "K", sleep=lambda x: None), NOW), 1)
+
+    def test_unavailable_size_fails_the_run(self):
+        def h(method, path, headers, body):
+            return (404, {}) if "/rpc/db_size_mb" in path else (200, [] if method == "GET" else None)
+
+        with FakeServer(h) as s:
+            with self.assertLogs("pipeline.cleanup", level="WARNING"):
+                self.assertEqual(run(Supabase(s.url, "K", sleep=lambda x: None), NOW), 1)
+
+    def test_main_returns_the_run_status(self):
+        import pipeline.cleanup as c
+        with FakeServer(self.handler([], size=999.0)) as s:
+            with self.assertLogs("pipeline.cleanup", level="WARNING"):
+                code = c.main({"SUPABASE_URL": s.url, "SUPABASE_SECRET_KEY": "k"}, now=NOW)
+        self.assertEqual(code, 1)
+
     def test_short_history_skips_the_bars_delete(self):
         with FakeServer(self.handler([{"bar_start": s} for s in days(10)])) as s:
             with self.assertLogs("pipeline.cleanup", level="INFO"):

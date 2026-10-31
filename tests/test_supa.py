@@ -55,6 +55,20 @@ class ClientTest(unittest.TestCase):
         self.assertIn("on_conflict=asof%2Csymbol", req["path"])
         self.assertIn("merge-duplicates", req["headers"]["prefer"])
 
+    def test_rows_without_a_market_are_refused_before_any_request(self):
+        with FakeServer(lambda *a: (201, None)) as s:
+            db = Supabase(s.url, "K", sleep=NO_SLEEP)
+            for bad in ([{"symbol": "A"}], [{"market": "", "symbol": "A"}], [{"market": "JP", "symbol": "A"}],
+                        [{"market": "VN", "symbol": "A"}, {"symbol": "B"}]):
+                with self.assertRaises(ValueError):
+                    db.upsert("quotes_latest", bad, "market,symbol")
+            self.assertEqual(s.requests, [])
+
+    def test_tables_keyed_without_market_are_not_checked(self):
+        with FakeServer(lambda *a: (201, None)) as s:
+            Supabase(s.url, "K", sleep=NO_SLEEP).upsert("other", [{"a": 1}], "a")
+            self.assertEqual(len(s.requests), 1)
+
     def test_upsert_can_keep_existing_rows_instead_of_merging(self):
         with FakeServer(lambda *a: (201, None)) as s:
             Supabase(s.url, "K", sleep=NO_SLEEP).upsert("bars_30m", [{"a": 1}], "symbol,bar_start", merge=False)

@@ -1,4 +1,7 @@
 """Window numbers between two snapshots of the price board (cumulative-in-day fields)."""
+import logging
+
+log = logging.getLogger("pipeline.compare")
 
 CUMULATIVE = ("TT", "TV", "FB", "FS", "PTQ", "PTV")
 
@@ -13,12 +16,16 @@ def delta(prev, curr):
 
 def delta_all(prev_rows, curr_rows):
     """Deltas for every symbol that has live data (a TT field) in both snapshots."""
-    out = {}
+    out, dropped = {}, []
     for sym, curr in curr_rows.items():
         prev = prev_rows.get(sym)
         if prev is None or "TT" not in prev or "TT" not in curr:
             continue
         d = delta(prev, curr)
-        if d is not None:
+        if d is None:
+            dropped.append(sym)
+        else:
             out[sym] = d
+    if dropped:
+        log.warning("%d symbol(s) skipped, a cumulative field went down: %s", len(dropped), ",".join(sorted(dropped)[:10]))
     return out

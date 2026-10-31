@@ -63,7 +63,7 @@ class KbsTest(unittest.TestCase):
 
     def test_large_symbol_lists_are_split_in_chunks(self):
         codes = [f"A{i:03d}" for i in range(3200)]
-        with FakeServer(lambda *a: (200, [])) as s:
+        with FakeServer(lambda *a: (200, [KBS_ROW])) as s:
             kbs.fetch(codes, url=s.url, **NO_SLEEP)
             sizes = [len(r["body"]["code"].split(",")) for r in s.requests]
         self.assertEqual(sizes, [1500, 1500, 200])
@@ -87,8 +87,9 @@ class VciTest(unittest.TestCase):
 
     def test_rows_without_live_volume_are_dropped(self):
         dead = {"listingInfo": {"symbol": "XYZ"}, "matchPrice": {}, "bidAsk": {}}
-        with FakeServer(lambda *a: (200, [dead])) as s:
-            self.assertEqual(vci.fetch(["XYZ"], url=s.url, **NO_SLEEP), {})
+        live = {**VCI_ROW}
+        with FakeServer(lambda *a: (200, [dead, live])) as s:
+            self.assertEqual(set(vci.fetch(["XYZ", "HPG"], url=s.url, **NO_SLEEP)), {"HPG"})
 
 
 class AlpacaTest(unittest.TestCase):
@@ -105,12 +106,105 @@ class AlpacaTest(unittest.TestCase):
         self.assertEqual((r["FB"], r["FS"], r["PTQ"], r["PTV"]), (0, 0, 0, 0))
 
     def test_symbol_without_a_daily_bar_is_skipped(self):
-        with FakeServer(lambda *a: (200, {"NEW": {"latestTrade": {"p": 1}}})) as s:
-            self.assertEqual(alpaca.fetch(["NEW"], "k", "s", url=s.url, **NO_SLEEP), {})
+        body = {"NEW": {"latestTrade": {"p": 1}}, **ALPACA}
+        with FakeServer(lambda *a: (200, body)) as s:
+            self.assertEqual(set(alpaca.fetch(["NEW", "AAPL"], "k", "s", url=s.url, **NO_SLEEP)), {"AAPL"})
 
     def test_missing_credentials_fail_loudly(self):
         with self.assertRaises(SourceError):
             alpaca.fetch(["AAPL"], "", "", url="http://127.0.0.1:1")
+
+
+class EmptyFeedTest(unittest.TestCase):
+    BAD_BODIES = (None, {}, "oops", 7, [], [KBS_UNLISTED], [None, 3])
+
+    def test_kbs_rejects_empty_or_malformed_bodies(self):
+        for body in self.BAD_BODIES:
+            with FakeServer(lambda *a, b=body: (200, b)) as s:
+                with self.assertRaises(SourceError, msg=repr(body)):
+                    kbs.fetch(["FPT"], url=s.url, **NO_SLEEP)
+
+    def test_vci_rejects_empty_or_malformed_bodies(self):
+        for body in (None, {}, "oops", [], [{"listingInfo": {}, "matchPrice": {}}], [None]):
+            with FakeServer(lambda *a, b=body: (200, b)) as s:
+                with self.assertRaises(SourceError, msg=repr(body)):
+                    vci.fetch(["HPG"], url=s.url, **NO_SLEEP)
+
+    def test_alpaca_rejects_empty_or_malformed_bodies(self):
+        for body in (None, [], "oops", {}, {"NEW": {"latestTrade": {"p": 1}}}):
+            with FakeServer(lambda *a, b=body: (200, b)) as s:
+                with self.assertRaises(SourceError, msg=repr(body)):
+                    alpaca.fetch(["AAPL"], "k", "s", url=s.url, **NO_SLEEP)
+
+    def test_kbs_returning_nothing_live_falls_back_to_vci(self):
+        with FakeServer(lambda *a: (200, [])) as bad, FakeServer(lambda *a: (200, [VCI_ROW])) as good:
+            with self.assertLogs("pipeline.sources", level="INFO") as cm:
+                rows = fetch_vn(["HPG"], kbs_url=bad.url, vci_url=good.url, **NO_SLEEP)
+        self.assertIn("HPG", rows)
+        self.assertTrue(any("source=VCI" in line for line in cm.output))
+
+    def test_both_sources_empty_is_an_error(self):
+        with FakeServer(lambda *a: (200, [])) as a, FakeServer(lambda *a: (200, None)) as b:
+            with self.assertRaises(SourceError):
+                fetch_vn(["HPG"], kbs_url=a.url, vci_url=b.url, **NO_SLEEP)
+
+    def test_rows_say_where_they_came_from_and_whether_they_carry_negotiated_data(self):
+        with FakeServer(lambda *a: (200, [KBS_ROW])) as s:
+            self.assertEqual(kbs.fetch(["FPT"], url=s.url, **NO_SLEEP)["FPT"]["SRC"], "KBS")
+        with FakeServer(lambda *a: (200, [VCI_ROW])) as s:
+            r = vci.fetch(["HPG"], url=s.url, **NO_SLEEP)["HPG"]
+        self.assertEqual((r["SRC"], r["PT"]), ("VCI", False))
+        with FakeServer(lambda *a: (200, ALPACA)) as s:
+            a = alpaca.fetch(["AAPL"], "k", "s", url=s.url, **NO_SLEEP)["AAPL"]
+        self.assertEqual(a["SRC"], "Alpaca")
+
+
+class HttpLimitsTest(unittest.TestCase):
+    def test_huge_response_is_refused(self):
+        with FakeServer(lambda *a: (200, {"x": "y" * 5000})) as s:
+            with self.assertRaises(SourceError):
+                request_json(s.url, max_bytes=1000, **NO_SLEEP)
+
+    def test_response_within_the_limit_is_fine(self):
+        with FakeServer(lambda *a: (200, {"x": 1})) as s:
+            self.assertEqual(request_json(s.url, max_bytes=1000, **NO_SLEEP), {"x": 1})
+
+    def test_gzip_bomb_is_refused(self):
+        import gzip, json, threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        bomb = gzip.compress(json.dumps({"x": "0" * 200_000}).encode())
+
+        class H(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Content-Length", str(len(bomb)))
+                self.end_headers()
+                self.wfile.write(bomb)
+
+            def log_message(self, *a):
+                pass
+
+        srv = HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.02}, daemon=True).start()
+        try:
+            with self.assertRaises(SourceError):
+                request_json(f"http://127.0.0.1:{srv.server_address[1]}/", max_bytes=10_000, **NO_SLEEP)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+    def test_client_error_keeps_the_start_of_the_body_in_the_message(self):
+        with FakeServer(lambda *a: (403, {"message": "bad key for this feed"})) as s:
+            with self.assertRaises(SourceError) as cm:
+                request_json(s.url, **NO_SLEEP)
+        self.assertIn("bad key for this feed", str(cm.exception))
+
+    def test_error_body_in_the_message_is_cut_to_200_bytes(self):
+        with FakeServer(lambda *a: (400, {"m": "z" * 1000})) as s:
+            with self.assertRaises(SourceError) as cm:
+                request_json(s.url, **NO_SLEEP)
+        self.assertLess(len(str(cm.exception)), 400)
 
 
 class FallbackTest(unittest.TestCase):
