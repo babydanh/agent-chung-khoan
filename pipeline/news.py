@@ -5,7 +5,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 
 log = logging.getLogger("pipeline.news")
 
@@ -15,6 +15,7 @@ FEEDS = {
     "VnExpress Kinh doanh": "https://vnexpress.net/rss/kinh-doanh.rss",
 }
 SUMMARY_MAX = 200
+MAX_AGE = timedelta(days=3)
 # Three-letter words that read like tickers but are not (a real ticker "CEO" exists; it is skipped on purpose).
 NOT_SYMBOLS = frozenset({"USD", "GDP", "CEO", "CFO", "CPI", "PMI", "IPO", "ETF", "VND", "EUR", "FED", "OPEC",
                          "EPS", "ROE", "ROA", "FDI", "WTO", "IMF", "NHNN", "TTCK", "UBCK", "AI", "OTC", "ESG"})
@@ -22,6 +23,10 @@ _SCRIPT = re.compile(r"<(script|style)\b.*?</\1\s*>", re.S | re.I)
 _BLOCK = re.compile(r"</?(br|p|div|li|ul|ol|h\d|tr|td|table)\b[^>]*>", re.I)
 _TAG = re.compile(r"<[^>]*>")
 _TICKER = re.compile(r"(?<!\w)[A-Z]{3}(?!\w)")
+
+
+class NewsError(Exception):
+    """A feed could not be read."""
 
 
 def strip_html(text):
@@ -52,13 +57,13 @@ def _published(raw):
 def parse_rss(xml_text, source, known):
     try:
         root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return []
+    except ET.ParseError as e:
+        raise NewsError(f"{source}: not valid XML ({e})") from e
     out = []
     for item in root.iter("item"):
         title = strip_html(item.findtext("title"))
         link = (item.findtext("link") or "").strip()
-        if not title or not link:
+        if not title or not link.startswith("https://"):  # no http:, javascript: or other schemes
             continue
         summary = summarize(strip_html(item.findtext("description")))
         out.append({"id": hashlib.sha1(link.encode()).hexdigest()[:10], "title": title, "link": link,
@@ -67,17 +72,25 @@ def parse_rss(xml_text, source, known):
     return out
 
 
-def fetch_all(feeds, known, get_text):
-    """Read every feed; one that fails is logged and skipped. Newest first, no duplicate links."""
-    seen, items = set(), []
+def fetch_all(feeds, known, get_text, now=None):
+    """Read every feed; one that fails is logged with its traceback and skipped. Headlines older than three days
+    are dropped (those without a date are kept). Newest first, no duplicate links."""
+    now = now or datetime.now(timezone.utc)
+    oldest = (now - MAX_AGE).isoformat()
+    seen, items, failed = set(), [], 0
     for source, url in feeds.items():
         try:
             parsed = parse_rss(get_text(url), source, known)
-        except Exception as e:  # a broken feed must not stop the others
-            log.warning("feed %s failed: %s", source, e)
+        except Exception:  # a broken feed must not stop the others
+            failed += 1
+            log.exception("feed %s failed", source)
             continue
         for it in parsed:
-            if it["link"] not in seen:
-                seen.add(it["link"])
-                items.append(it)
+            if it["link"] in seen or (it["published"] and it["published"] < oldest):
+                continue
+            seen.add(it["link"])
+            items.append(it)
+    log.info("%d of %d feeds failed, %d headlines kept", failed, len(feeds), len(items))
+    if feeds and failed == len(feeds):
+        log.error("no feed could be read")
     return sorted(items, key=lambda i: i["published"] or "", reverse=True)

@@ -32,6 +32,12 @@ _PATTERNS = [re.compile(p) for p in (
     r"tat tay",
     r"\ball\s*in\b",
     r"phim hang",
+    # advice in headlines; "khoi ngoai mua vao / ban ra" (plain flow reporting) must stay allowed.
+    # "dang mua" also catches "đang mua" once accents are gone: a rare false alarm, one headline dropped.
+    r"\bdang\s+(mua|ban)\b",
+    r"\bnen\b(\s+\w+){0,3}\s+(mua vao|ban ra)\b",
+    r"\bse\s+(tang|giam)\b",
+    r"\bgap\s+(doi|ba)\b",
     r"\b(should|strong)\s+(buy|sell)\b",
     r"price target",
     r"\brecommend",

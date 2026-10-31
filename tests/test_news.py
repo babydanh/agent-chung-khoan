@@ -1,7 +1,11 @@
 import unittest
 from pathlib import Path
 
-from pipeline.news import FEEDS, extract_symbols, fetch_all, parse_rss, strip_html, summarize
+from datetime import datetime, timezone
+
+from pipeline.news import FEEDS, NewsError, extract_symbols, fetch_all, parse_rss, strip_html, summarize
+
+NOW = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
 from tests.fakehttp import FakeServer
 
 XML = (Path(__file__).parent / "fixtures" / "feed.xml").read_text(encoding="utf-8")
@@ -82,8 +86,60 @@ class ParseRssTest(unittest.TestCase):
         self.assertEqual(len({i["id"] for i in self.items}), 3)
         self.assertEqual(self.items[0]["id"], parse_rss(XML, "Other", KNOWN)[0]["id"])
 
-    def test_broken_xml_gives_empty_list(self):
-        self.assertEqual(parse_rss("<rss><channel><item>", "Demo", KNOWN), [])
+    def test_broken_xml_raises(self):
+        with self.assertRaises(NewsError):
+            parse_rss("<rss><channel><item>", "Demo", KNOWN)
+
+    def test_only_https_links_are_kept(self):
+        xml = ("<rss><channel>"
+               "<item><title>A</title><link>http://example.com/a</link></item>"
+               "<item><title>B</title><link>javascript:alert(1)</link></item>"
+               "<item><title>C</title><link>ftp://example.com/c</link></item>"
+               "<item><title>D</title><link>https://example.com/d</link></item></channel></rss>")
+        self.assertEqual([i["title"] for i in parse_rss(xml, "Demo", KNOWN)], ["D"])
+
+
+class FetchHealthTest(unittest.TestCase):
+    def test_failed_feeds_are_counted_in_a_summary(self):
+        def get(url):
+            if "bad" in url:
+                raise OSError("down")
+            return XML
+
+        with self.assertLogs("pipeline.news", level="INFO") as cm:
+            fetch_all({"A": "https://a/", "B": "https://bad/"}, KNOWN, get, now=NOW)
+        self.assertTrue(any("1 of 2 feeds failed" in line for line in cm.output))
+
+    def test_all_feeds_failing_is_an_error(self):
+        def get(url):
+            raise OSError("down")
+
+        with self.assertLogs("pipeline.news", level="ERROR") as cm:
+            self.assertEqual(fetch_all({"A": "https://a/", "B": "https://b/"}, KNOWN, get, now=NOW), [])
+        self.assertTrue(any("no feed" in line for line in cm.output))
+
+    def test_a_bad_feed_logs_the_traceback(self):
+        def get(url):
+            return "<rss><channel><item>"
+
+        with self.assertLogs("pipeline.news", level="WARNING") as cm:
+            fetch_all({"A": "https://a/"}, KNOWN, get, now=NOW)
+        self.assertTrue(any("Traceback" in line for line in cm.output))
+
+    def test_headlines_older_than_three_days_are_dropped(self):
+        def get(url):
+            return XML  # a1 is from 2026-10-30, a3 from 2026-10-29
+
+        later = datetime(2026, 11, 2, 12, 0, tzinfo=timezone.utc)
+        items = fetch_all({"A": "https://a/"}, KNOWN, get, now=later)
+        self.assertEqual([i["link"] for i in items if i["published"]], [])
+        near = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
+        kept = fetch_all({"A": "https://a/"}, KNOWN, get, now=near)
+        self.assertEqual(len([i for i in kept if i["published"]]), 2)
+
+    def test_headlines_without_a_date_are_kept(self):
+        items = fetch_all({"A": "https://a/"}, KNOWN, lambda u: XML, now=NOW)
+        self.assertIn(None, [i["published"] for i in items])
 
 
 class FetchAllTest(unittest.TestCase):
@@ -102,7 +158,7 @@ class FetchAllTest(unittest.TestCase):
 
             feeds = {"A": s.url + "/a", "B": s.url + "/bad", "C": s.url + "/c"}
             with self.assertLogs("pipeline.news", level="WARNING"):
-                items = fetch_all(feeds, KNOWN, get)
+                items = fetch_all(feeds, KNOWN, get, now=NOW)
         links = [i["link"] for i in items]
         self.assertEqual(len(links), len(set(links)))
         self.assertEqual(links[0], "https://example.com/a1")  # 02:15Z beats 20:00Z of the day before

@@ -30,6 +30,48 @@ class DigitsAndUnitsTest(unittest.TestCase):
         self.assertTrue(ok("{SYM1} có dấu hiệu thú vị"))
 
 
+class DisguisedNumbersTest(unittest.TestCase):
+    def test_numbers_written_as_words_are_rejected(self):
+        for bad in ("hai trăm tỉ đồng", "ba mươi phần trăm", "gấp mười lần", "một nửa số lệnh", "chín chục mã",
+                    "năm triệu cổ phiếu", "bốn tỷ", "sáu trăm nghìn", "bảy ngàn", "tám mươi"):
+            self.assertFalse(ok("{SYM1} " + bad), bad)
+
+    def test_unaccented_number_words_are_rejected_too(self):
+        for bad in ("hai tram ty dong", "ba muoi phan tram", "mot nua", "nghin co phieu", "ti dong"):
+            self.assertFalse(ok("{SYM1} " + bad), bad)
+
+    def test_full_width_and_compatibility_characters_are_normalised(self):
+        self.assertFalse(ok("{SYM1} ba mươi ％"))
+        self.assertFalse(ok("{SYM1} tăng ３"))
+        self.assertFalse(ok("{SYM1} tăng mạnh ٪"))
+
+    def test_non_breaking_and_odd_spaces_do_not_hide_a_phrase(self):
+        self.assertFalse(ok("{SYM1} phần\u00a0trăm"))
+        self.assertFalse(ok("{SYM1} ba\u2009mươi"))
+        self.assertFalse(ok("Nên\u00a0mua {SYM1}"))
+
+    def test_ordinary_words_that_only_look_similar_are_kept(self):
+        self.assertTrue(ok("{SYM1} có dấu hiệu từ khối ngoại, sau phiên sáng"))
+        self.assertTrue(ok("Miền Nam có nhiều tin, {SYM1} được chú ý"))
+
+
+class BareTickerTest(unittest.TestCase):
+    def test_a_ticker_written_outside_a_placeholder_is_rejected(self):
+        self.assertFalse(ok("HPG nổi bật hôm nay"))
+        self.assertFalse(ok("{SYM1} và FPT cùng nổi bật"))
+        self.assertFalse(ok("Mã VCBS và HOSE"))
+
+    def test_placeholders_and_short_or_lowercase_words_are_fine(self):
+        self.assertTrue(ok("{SYM1} nổi bật"))
+        self.assertTrue(ok("VN và US cùng nổi bật, {SYM1}"))  # two letters: not a ticker shape
+
+    def test_clean_drops_the_paragraph_with_a_bare_ticker(self):
+        good, dropped = clean([{"text": "HPG nổi bật", "news_ids": []}, {"text": "{SYM1} nổi bật", "news_ids": []}],
+                              TABLE, IDS)
+        self.assertEqual([g["text"] for g in good], ["HPG nổi bật"])
+        self.assertEqual(len(dropped), 1)
+
+
 class PlaceholderTest(unittest.TestCase):
     def test_unknown_placeholder_is_rejected(self):
         self.assertFalse(ok("Mã {SYM9} nổi bật"))

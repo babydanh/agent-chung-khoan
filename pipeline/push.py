@@ -1,5 +1,5 @@
 """Push notification content and timing. Logic only: nothing is sent from here."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from pipeline.banned import find_banned
@@ -16,13 +16,20 @@ def _local(dt):
 
 
 def build(market, bulletin_time, now):
-    """{"title", "body"} for a new bulletin, or None when it must not be pushed right now."""
+    """Notification for a new bulletin.
+
+    {"status": "send", ...} now, or {"status": "defer", ..., "send_at": ISO time} when a US bulletin lands in the
+    quiet hours: it is held until 07:00 Vietnam time, never dropped. The text is the same either way.
+    """
     if market not in ("VN", "US"):
         raise ValueError(f"unknown market {market}")
     shown, current = _local(bulletin_time), _local(now)
-    if market == "US" and (current.hour >= QUIET_START or current.hour < QUIET_END):
-        return None
     note = {"title": TITLE, "body": f"Bản tin {shown:%H:%M} đã có"}
     if find_banned(note["title"] + " " + note["body"]):
         raise ValueError("notification text failed the banned-wording scan")
-    return note
+    if market == "US" and (current.hour >= QUIET_START or current.hour < QUIET_END):
+        send_at = current.replace(hour=QUIET_END, minute=0, second=0, microsecond=0)
+        if current.hour >= QUIET_START:
+            send_at += timedelta(days=1)
+        return {"status": "defer", "send_at": send_at.isoformat(), **note}
+    return {"status": "send", **note}

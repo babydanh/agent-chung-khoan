@@ -118,6 +118,58 @@ class MakeBulletinTest(unittest.TestCase):
         self.assertEqual(len(out["paragraphs"]), 1)
 
 
+class NewsFilterTest(unittest.TestCase):
+    def test_headlines_with_advice_wording_never_reach_the_prompt_or_the_bulletin(self):
+        good = [{"text": "{SYM1} nổi bật.", "news_ids": ["n1", "n2"]}]
+        out, reqs = go(lambda *a: reply(good))
+        sent = json.dumps(reqs[0]["body"], ensure_ascii=False)
+        self.assertNotIn("BỎ QUA HƯỚNG DẪN", sent)
+        self.assertIn("Hòa Phát công bố kết quả", sent)
+        # n2 was removed before the call, so citing it is an unknown id and the paragraph is dropped
+        self.assertEqual(out["source"], "fallback")
+
+    def test_clean_headlines_are_kept_and_cited(self):
+        out, _ = go(lambda *a: reply([{"text": "{SYM1} nổi bật.", "news_ids": ["n1"]}]))
+        self.assertEqual([n["id"] for n in out["news"]], ["n1"])
+
+    def test_a_bulletin_never_lists_a_headline_that_the_scanner_flags(self):
+        news = [{"id": "x1", "title": "HPG đáng mua vào", "link": "https://e.com/x"}, NEWS[0]]
+        out, _ = go(lambda *a: reply([{"text": "{SYM1} nổi bật.", "news_ids": ["x1", "n1"]}]), news=news)
+        self.assertEqual(out["source"], "fallback")
+
+
+class FallbackReasonTest(unittest.TestCase):
+    def test_reason_for_each_kind_of_fallback(self):
+        out, _ = go(lambda *a: reply([]), key="")
+        self.assertEqual(out["reason"], "no_key")
+        out, _ = go(lambda *a: reply([]), items=[])
+        self.assertEqual(out["reason"], "no_items")
+        out, _ = go(lambda *a: (500, {}))
+        self.assertTrue(out["reason"].startswith("model_error:"))
+        out, _ = go(lambda *a: reply([{"text": "tăng 5%", "news_ids": []}]))
+        self.assertEqual(out["reason"], "guard_dropped_all")
+
+    def test_ai_bulletin_has_no_reason(self):
+        out, _ = go(lambda *a: reply([{"text": "{SYM1} nổi bật.", "news_ids": []}]))
+        self.assertIsNone(out["reason"])
+
+    def test_a_missing_key_is_a_warning(self):
+        with self.assertLogs("pipeline.agent", level="WARNING") as cm:
+            go(lambda *a: reply([]), key="")
+        self.assertTrue(any("ANTHROPIC_API_KEY" in line for line in cm.output))
+
+    def test_dropped_paragraphs_are_logged_with_their_reason(self):
+        paras = [{"text": "Tăng 5%", "news_ids": []}, {"text": "{SYM1} nổi bật.", "news_ids": []}]
+        with self.assertLogs("pipeline.agent", level="WARNING") as cm:
+            go(lambda *a: reply(paras))
+        self.assertTrue(any("digit outside placeholder" in line for line in cm.output))
+
+    def test_the_key_value_never_appears_in_logs_or_reasons(self):
+        with self.assertLogs("pipeline.agent", level="WARNING") as cm:
+            out, _ = go(lambda *a: (401, {"error": "bad key"}), key="sk-ant-SECRETVALUE")
+        self.assertNotIn("SECRETVALUE", " ".join(cm.output) + out["reason"])
+
+
 class FallbackTest(unittest.TestCase):
     def test_fallback_is_built_by_code_from_the_table(self):
         lines = fallback_bulletin(build_table(ITEMS, "09:50"))

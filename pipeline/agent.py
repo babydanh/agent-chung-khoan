@@ -109,22 +109,37 @@ def fallback_bulletin(table):
     return lines
 
 
+def _scrub(text, secret):
+    return text.replace(secret, "***") if secret else text
+
+
 def make_bulletin(items, news, api_key, time_text, url=URL, model=MODEL, **http):
     table = build_table(items, time_text)
-    fallback = {"source": "fallback", "paragraphs": fallback_bulletin(table), "news": [], "dropped": []}
-    if not items or not api_key:
-        return fallback
+    news = [n for n in news if not find_banned(n["title"])]  # a headline with advice wording is not shown to anyone
+
+    def fallback(reason, dropped=()):
+        return {"source": "fallback", "reason": reason, "paragraphs": fallback_bulletin(table), "news": [],
+                "dropped": list(dropped)}
+
+    if not items:
+        return fallback("no_items")
+    if not api_key:
+        log.warning("ANTHROPIC_API_KEY is not set: using the code-built bulletin")
+        return fallback("no_key")
     try:
         raw = _call(request_body(model, table, news), api_key, url, **http)
     except (SourceError, AgentError) as e:
-        log.warning("model unavailable, using the code-built bulletin (%s)", e)
-        return fallback
+        msg = _scrub(str(e), api_key)
+        log.warning("model unavailable, using the code-built bulletin (%s)", msg)
+        return fallback(f"model_error:{msg}")
     by_id = {n["id"]: n for n in news[:MAX_NEWS]}
     good, dropped = guard.clean(raw, table, set(by_id))
+    for why in dropped:
+        log.warning("paragraph dropped by the guard: %s", why)
     if not good:
-        log.warning("no paragraph passed the guard, using the code-built bulletin (%s)", dropped)
-        return {**fallback, "dropped": dropped}
+        log.warning("no paragraph passed the guard, using the code-built bulletin")
+        return fallback("guard_dropped_all", dropped)
     ids = [i for g in good for i in g["news_ids"]]
     used = [{k: by_id[i][k] for k in ("id", "title", "link", "source") if k in by_id[i]}
             for i in dict.fromkeys(ids)]
-    return {"source": "ai", "paragraphs": [g["text"] for g in good], "news": used, "dropped": dropped}
+    return {"source": "ai", "reason": None, "paragraphs": [g["text"] for g in good], "news": used, "dropped": dropped}
