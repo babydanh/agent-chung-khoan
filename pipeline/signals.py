@@ -50,7 +50,7 @@ def evaluate(d, history, th, atr=None, market=None, minutes=None, history_minute
     big = d["vol"] >= th["min_vol"]
     signals = []
     if big and not learning:
-        z = robust_z(value, base) if value is not None else None
+        z = robust_z(value, base) if value is not None and base else None  # empty baseline (min_days <= 0): no score
         if z is not None and z >= th["s1_z"]:
             signals.append({"id": "S1", "dir": None})
     if big and abs(d["fnet"]) >= th["s2_share"] * d["vol"]:
