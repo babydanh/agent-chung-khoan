@@ -28,11 +28,15 @@ class Supabase:
         q = urllib.parse.urlencode(params or {})
         return self._call(f"/{table}?{q}", method="GET")
 
-    def select_all(self, table, params=None, page=1000):
-        """select() across pages (PostgREST caps one response); stops at the first short page."""
+    def select_all(self, table, params=None, page=1000, order=None):
+        """select() across pages (PostgREST caps one response); stops at the first short page.
+
+        `order` is required (e.g. "market.asc,symbol.asc"): without a stable order the pages can overlap or skip rows."""
+        if not order:
+            raise ValueError("select_all needs an explicit order (the primary key columns)")
         out = []
         while True:
-            rows = self.select(table, {**(params or {}), "limit": page, "offset": len(out)})
+            rows = self.select(table, {**(params or {}), "order": order, "limit": page, "offset": len(out)})
             out.extend(rows)
             if len(rows) < page:
                 return out

@@ -35,7 +35,7 @@ def db_report(db_mb, limit=DB_LIMIT_MB):
 
 
 def run(db, now):
-    starts = [r["bar_start"] for r in db.select_all("bars_30m", {"select": "bar_start"})]
+    starts = [r["bar_start"] for r in db.select_all("bars_30m", {"select": "bar_start"}, order="market.asc,symbol.asc,bar_start.asc")]
     cut = bars_cutoff(starts)
     if cut:
         db.delete("bars_30m", {"bar_start": "lt." + cut.isoformat()})

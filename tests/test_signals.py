@@ -116,6 +116,23 @@ class LearningCountTest(unittest.TestCase):
         self.assertTrue(evaluate(BIG, HIST[:19], TH)["learning"])
 
 
+class EmptyBaselineTest(unittest.TestCase):
+    def test_min_days_zero_with_no_history_does_not_crash(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate(BIG, [], th)
+        self.assertEqual((ids(r), r["learning"]), ([], False))
+
+    def test_min_days_zero_with_only_zero_minute_history_does_not_crash(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate(BIG, HIST[:3], th, minutes=15, history_minutes=[0, 0, 0])
+        self.assertNotIn("S1", ids(r))
+
+    def test_other_signals_still_work_with_an_empty_baseline(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate({**BIG, "fnet": 50_000}, [], th)
+        self.assertEqual(ids(r), ["S2"])
+
+
 class S4Test(unittest.TestCase):
     def test_move_of_at_least_k_atr_triggers_with_direction(self):
         up = evaluate({**BIG, "px_move": 3.0}, HIST, TH2, atr=2.0)
