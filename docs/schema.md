@@ -56,7 +56,7 @@ Ghi: **bot** = khoá secret/service (bỏ qua RLS). **App** = người dùng đ�
 | `heartbeat` | 30 ngày | `last_seen` |
 | `snapshot_compact` | `keep_compact` slot mới nhất/thị trường | `slot_start` |
 
-`bars_30m`: bot giữ 40 phiên, nhưng 20 phiên có thể trải hơn 30 ngày lịch quanh Tết, nên SQL dùng 45 ngày (số này thắng; nếu bot đổi số phiên thì sửa ở SQL). `baseline_30m`, `bars_1d`, `quotes_latest` không bị xoá (ghi đè hoặc nhỏ).
+`bars_30m`: trước đây bot tự giữ 40 phiên (nay `pipeline.cleanup` chỉ gọi RPC `cleanup_old_data`, không tự xoá nữa), nhưng 20 phiên có thể trải hơn 30 ngày lịch quanh Tết, nên SQL dùng 45 ngày (số này thắng; nếu bot đổi số phiên thì sửa ở SQL). `baseline_30m`, `bars_1d`, `quotes_latest` không bị xoá (ghi đè hoặc nhỏ).
 - `db_size_mb()`: dung lượng database (MB) để bot theo dõi hạn mức gói Free (500 MB).
 
 ## Ngân sách dung lượng (ƯỚC TÍNH, chưa đo trên dữ liệu thật)

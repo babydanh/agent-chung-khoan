@@ -1,28 +1,13 @@
-"""Retention: keep 40 sessions of bars_30m and 30 days of signals; report database size."""
+"""Retention: call the SQL function cleanup_old_data (single source of truth for every cutoff, see docs/schema.md); report database size."""
 import logging
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from pipeline.sources.http import SourceError
 from pipeline.supa import from_env
 
 log = logging.getLogger("pipeline.cleanup")
-KEEP_SESSIONS = 40
-SIGNAL_DAYS = 30
 DB_LIMIT_MB = 400
-
-
-def bars_cutoff(bar_starts, keep=KEEP_SESSIONS):
-    """Start (UTC midnight) of the oldest session to keep; None when there are not more than `keep` sessions."""
-    dates = sorted({datetime.fromisoformat(s).astimezone(timezone.utc).date() for s in bar_starts}, reverse=True)
-    if len(dates) <= keep:
-        return None
-    d = dates[keep - 1]
-    return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
-
-
-def signals_cutoff(now, days=SIGNAL_DAYS):
-    return now - timedelta(days=days)
 
 
 def db_report(db_mb, limit=DB_LIMIT_MB):
@@ -35,12 +20,13 @@ def db_report(db_mb, limit=DB_LIMIT_MB):
 
 
 def run(db, now):
-    starts = [r["bar_start"] for r in db.select_all("bars_30m", {"select": "bar_start"}, order="market.asc,symbol.asc,bar_start.asc")]
-    cut = bars_cutoff(starts)
-    if cut:
-        db.delete("bars_30m", {"bar_start": "lt." + cut.isoformat()})
-        log.info("bars_30m: deleted before %s", cut.isoformat())
-    db.delete("signals", {"asof": "lt." + signals_cutoff(now).isoformat()})
+    failed = False
+    try:
+        deleted = db.rpc("cleanup_old_data")
+        log.info("cleanup_old_data deleted %s", ", ".join(f"{k}={v}" for k, v in sorted((deleted or {}).items())))
+    except SourceError as e:
+        log.error("cleanup_old_data failed (%s)", e)
+        failed = True
     try:
         size = db.rpc("db_size_mb")
     except SourceError as e:
@@ -48,7 +34,7 @@ def run(db, now):
         size = None
     level, msg = db_report(size)
     getattr(log, level)(msg)
-    return 1 if level == "warning" else 0  # an unknown or oversized database must fail the job, not just log
+    return 1 if failed or level == "warning" else 0  # a failed purge or an unknown/oversized database must fail the job
 
 
 def main(env, now=None):
