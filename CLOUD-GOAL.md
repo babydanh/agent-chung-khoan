@@ -1,0 +1,18 @@
+# CLOUD-GOAL v2 (phiên supabase-ci): SỬA LỖI REVIEW cho PR #2
+
+`database-reviewer` và `security-reviewer` đã đọc PR #2 và kết luận CHẶN GỘP. Các role chỉ ĐỌC, chưa chạy: với mỗi lỗi, thêm test đỏ vào `supabase/tests/rls.sql` trước (nếu lỗi sai thì ghi `CLOUD-BLOCKERS.md`), rồi sửa. Vẫn chỉ sửa `supabase/**`, `docs/**`, `ci-pending/workflows/db-test.yml`; sửa trên nhánh `cloud/danh3-supabase-ci` (PR #2 tự cập nhật), commit hẹp, không push `main`, không force push, không dừng hỏi. Thêm một migration mới `0003_*.sql` KHÔNG cần: project thật chưa áp migration nào nên SỬA THẲNG `0002` (ghi rõ trong PR: `0002` chưa chạy ở đâu thật).
+
+## Việc cần làm
+1. [P1] `digests` và `news` đang `using (true)` dù có cột `market`: dùng `public.can_read_market(market)` cho `digests`. Với `news`: lọc luôn hoặc ghi rõ trong `docs/schema.md` rằng tin Mỹ công khai (chọn lọc luôn, rẻ hơn). Thêm dữ liệu Mỹ vào test cho cả hai bảng và thêm đột biến tương ứng vào `mutate.sh`.
+2. [P1/P2] `DEFAULT 'VN'` ở cột `market` của `quotes_latest`, `bars_30m`, `signals` (`0002` ~dòng 10-12): bỏ default (backfill: thêm cột nullable → update → `set not null`, không để default). Sửa comment "giữ writer cũ chạy" (sai: khoá chính đã đổi). Thêm test: ghi thiếu `market` bị từ chối.
+3. [P2] `rls.sql` (~dòng 14-21): `_t_exec` đang `exception when others then return -1` nên lỗi sai nguyên nhân cũng được tính là "bị chặn". Bắt đúng SQLSTATE (`42501` hoặc mã lỗi mong đợi) và trả mã riêng cho lỗi khác (làm test ĐỎ). Kiểm quyền EXECUTE bằng `has_function_privilege('anon','public.delete_my_account()','execute')`. Sửa dòng ~87 (comment nói B nhưng dùng uuid của C).
+4. [P2] Thêm đột biến cho `mutate.sh` còn thiếu: `can_read_market` luôn `true`, `is_app_owner` luôn `true`, `signal_levels` thêm cột `items` hoặc đổi `security_invoker`, `signal_levels` cho anon, đổi `search_path` của hàm security definer, policy `digests`/`news` Mỹ, quyền EXECUTE của anon trên `delete_my_account`. Mọi đột biến mới phải bị test bắt.
+5. [P2] Giới hạn ghi của người dùng: `check (octet_length(prefs.data::text) <= 8192)`, `check (char_length(symbol) <= 12)`, `check` độ dài cho `consents.kind/version`; giới hạn ~200 dòng `watchlists` mỗi người (trigger hoặc policy). `supabase/config.toml`: tắt anonymous sign-ins một cách tường minh.
+6. [P2] Retention: thêm hàm SQL `cleanup_old_data()` (xoá `signals`/`bars_30m` quá 30 ngày, giữ N slot cuối của `snapshot_compact`, xoá `snapshot_meta` quá 60 ngày) để bot gọi bằng RPC; ghi ngân sách dung lượng vào `docs/schema.md` (ước tính, ghi rõ là ước tính). Hàm `db_size_mb()` cho bot phải có (bot dùng cả hai qua RPC); chỉ `service_role` được gọi.
+7. [P2] Index: `signals (market, symbol, asof desc)`, `zones (market, symbol, asof desc)`. Bỏ index trùng: `watchlists_user_id_idx`, `prefs_user_id_idx`.
+8. [P3] Policy gọi `(select public.can_read_market(market))` để planner cache. Thêm `alter default privileges in schema public revoke all on tables from anon, authenticated`.
+9. [P3] `ci-pending/workflows/db-test.yml`: ghim phiên bản `setup-cli` (không `latest`), ghim digest ảnh `postgres:16-alpine` trong `mutate.sh`; secret không cần có; chuyển `env` xuống đúng step, thêm `persist-credentials: false` vào checkout. Ghi trong `docs/schema.md`: `local_shim.sql` dễ hơn Supabase thật (superuser, `auth.users` rút gọn, không có `auth.identities/sessions`), nên job `supabase start` trên GitHub mới là bằng chứng chính, và nó CHƯA chạy.
+
+## Điều kiện xong
+`rls.sql` in `RLS OK` trên Postgres 16; `mutate.sh` bắt 100% đột biến (cũ + mới), in số đột biến thật; các mục 1–3 có test đỏ→xanh; PR #2 đã cập nhật; ghi rõ phần CHƯA kiểm (Supabase CLI thật, Actions) và `CLOUD-BLOCKERS.md`. Cuối cùng chạy `cloud-xong supabase-ci` và in danh sách mục đã sửa/bỏ lại.
+
