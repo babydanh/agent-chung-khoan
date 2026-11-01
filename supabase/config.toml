@@ -2,7 +2,7 @@
 project_id = "agent-chung-khoan"
 
 [db]
-major_version = 15
+major_version = 17  # Supabase CLI accepts 13, 14, 15, 17; keep equal to mutate.sh and the real project (docs/schema.md)
 
 [auth]
 enable_anonymous_sign_ins = false

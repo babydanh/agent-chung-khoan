@@ -13,7 +13,7 @@ Cần Docker, không cần Supabase thật và không cần khoá nào:
 supabase/tests/mutate.sh
 ```
 
-Script dựng một Postgres tạm (`postgres:16-alpine`, đổi bằng `PG_IMAGE=...`), nạp `supabase/tests/local_shim.sql`
+Script dựng một Postgres tạm (`postgres:17-alpine` ghim digest, khớp `major_version` trong `supabase/config.toml`; đổi bằng `PG_IMAGE=...`), nạp `supabase/tests/local_shim.sql`
 (vai trò `anon`/`authenticated`/`service_role`, `auth.users`, `auth.uid()`), áp mọi file trong
 `supabase/migrations/`, rồi:
 
@@ -25,7 +25,7 @@ Kết quả mong đợi cuối cùng: `all mutations caught`. Cũng chạy trong
 
 ## Thêm đột biến mới
 
-Thêm một câu SQL vào mảng `mutations`. Lưu ý các bảng đã `revoke` quyền của `anon`/`authenticated`: chỉ thêm policy
+Thêm một câu SQL vào mảng `mutations` (hàm `rewrite 'hàm' 'regex' 'thay'` sửa một dòng trong thân hàm; chuỗi rỗng cho `search_path` viết `'"''"'` trong dấu nháy đơn của bash). Lỗi khi áp đột biến được báo là `SETUP ERROR`, không tính là bắt được. Lưu ý các bảng đã `revoke` quyền của `anon`/`authenticated`: chỉ thêm policy
 thì chưa đủ để mở (đó là lớp phòng thủ thứ hai), phải kèm `grant ...` như các ví dụ có sẵn. Đột biến chỉ đổi
 policy `update`/`delete` của `watchlists` cũng phải kèm policy `select` mở, vì Postgres cần thấy dòng mới sửa/xoá được.
 

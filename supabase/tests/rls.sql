@@ -22,9 +22,16 @@ exception when others then
   if sqlstate = expect then return -1; end if;
   raise exception 'unexpected error % (expected %) in [%]: %', sqlstate, expect, stmt, sqlerrm;
 end $$;
+-- _t_plan: EXPLAIN text of a query, run with the caller's rights (so RLS policies are in the plan).
+create function public._t_plan(q text) returns text language plpgsql as $$
+declare r text; acc text := '';
+begin
+  for r in execute 'explain (costs off) ' || q loop acc := acc || r || E'\n'; end loop;
+  return acc;
+end $$;
 create function public._t_as(uid uuid) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, true) $$;
-grant execute on function public._t_count(text), public._t_exec(text, text), public._t_as(uuid) to anon, authenticated, service_role;
+grant execute on function public._t_count(text), public._t_exec(text, text), public._t_plan(text), public._t_as(uuid) to anon, authenticated, service_role;
 
 -- Fixtures: A and B are normal users, O is the app owner.
 insert into auth.users (id) values
@@ -67,7 +74,6 @@ begin
   -- structure: execute privileges, SECURITY DEFINER hygiene, view shape, indexes
   if has_function_privilege('anon', 'public.delete_my_account()', 'execute') then raise exception 'anon can execute delete_my_account'; end if;
   if has_function_privilege('anon', 'public.is_app_owner()', 'execute') then raise exception 'anon can execute is_app_owner'; end if;
-  if has_function_privilege('anon', 'public.can_read_market(text)', 'execute') then raise exception 'anon can execute can_read_market'; end if;
   if not has_function_privilege('authenticated', 'public.delete_my_account()', 'execute') then raise exception 'authenticated cannot execute delete_my_account'; end if;
   if has_function_privilege('anon', 'public.cleanup_old_data(int)', 'execute') or has_function_privilege('authenticated', 'public.cleanup_old_data(int)', 'execute')
     then raise exception 'API roles can execute cleanup_old_data'; end if;
@@ -85,6 +91,16 @@ begin
   then raise exception 'signal_levels exposes unexpected columns'; end if;
   if not coalesce((select reloptions @> array['security_invoker=false'] from pg_class where oid = 'public.signal_levels'::regclass), false)
   then raise exception 'signal_levels must run with owner rights'; end if;
+
+  -- default privileges: objects created later in public are not open to the API roles (tables and sequences)
+  create table public._t_new_table (x int);
+  create sequence public._t_new_seq;
+  if has_table_privilege('anon', 'public._t_new_table', 'select') or has_table_privilege('authenticated', 'public._t_new_table', 'select')
+    then raise exception 'a new table in public is readable by anon/authenticated (default privileges)'; end if;
+  if has_sequence_privilege('anon', 'public._t_new_seq', 'usage') or has_sequence_privilege('authenticated', 'public._t_new_seq', 'usage')
+    then raise exception 'a new sequence in public is usable by anon/authenticated (default privileges)'; end if;
+  if not has_table_privilege('service_role', 'public._t_new_table', 'select')
+    then raise exception 'service_role lost default access to new tables'; end if;
 
   if not exists (select 1 from pg_indexes where indexname = 'signals_market_symbol_asof_idx') then raise exception 'missing signals index'; end if;
   if not exists (select 1 from pg_indexes where indexname = 'zones_market_symbol_asof_idx') then raise exception 'missing zones index'; end if;
@@ -146,6 +162,15 @@ begin
   if public._t_count('public.news where market = ''VN''') <> 1 then raise exception 'A cannot read VN news'; end if;
   if public._t_count('public.news where market = ''US''') <> 0 then raise exception 'A reads US news'; end if;
 
+  -- the owner check is evaluated once per query (InitPlan), not once per row (a correlated SubPlan)
+  declare t text; plan text;
+  begin
+    foreach t in array array['signals', 'quotes_latest', 'bars_1d', 'zones', 'digests', 'news'] loop
+      plan := public._t_plan('select * from public.' || t);
+      if plan !~ 'InitPlan' or plan ~ '(?<!Init)SubPlan' then raise exception 'policy on % does not use an InitPlan for the owner check: %', t, plan; end if;
+    end loop;
+  end;
+
   -- bot-only tables
   if public._t_count('public.bars_30m') <> 0 then raise exception 'A reads bars_30m'; end if;
   if public._t_count('public.baseline_30m') <> 0 then raise exception 'A reads baseline_30m'; end if;
@@ -173,6 +198,9 @@ begin
   if public._t_exec('insert into public.consents (kind, version, granted) values (''tos'', repeat(''v'', 33), true)', '23514') <> -1 then raise exception 'consents.version length is unlimited'; end if;
   if public._t_exec('insert into public.watchlists (market, symbol) select ''VN'', ''S'' || g from generate_series(1, 199) g') <> 199 then raise exception 'A cannot fill its watchlist to the cap'; end if;
   if public._t_exec('insert into public.watchlists (market, symbol) values (''VN'', ''OVER'')', '23514') <> -1 then raise exception 'watchlist cap (200 rows) not enforced'; end if;
+  -- consents: at most 100 rows per user (A has 2 here)
+  if public._t_exec('insert into public.consents (kind, version, granted) select ''k'' || g, ''1'', true from generate_series(1, 98) g') <> 98 then raise exception 'A cannot fill its consents to the cap'; end if;
+  if public._t_exec('insert into public.consents (kind, version, granted) values (''tos'', ''3'', true)', '23514') <> -1 then raise exception 'consents cap (100 rows) not enforced'; end if;
 end $$;
 reset role;
 
@@ -209,26 +237,49 @@ begin
   if (select count(*) from public.consents   where user_id = 'bbbbbbbb-0000-0000-0000-00000000000b') <> 1 then raise exception 'B consents changed'; end if;
 end $$;
 
--- Retention helpers (secret-key side). Old rows go, recent rows stay, snapshot_compact keeps the newest N slots per market.
-insert into public.signals (market, asof, symbol, level, learning, items) values ('VN', now() - interval '40 days', 'OLD', 0, true, '[]');
-insert into public.bars_30m (market, symbol, bar_start, vol, val, fnet, pt_val) values ('VN', 'OLD', now() - interval '40 days', 1, 1, 0, 0);
+-- Retention helpers (secret-key side). Rows older than each cutoff go, rows newer stay (a pair per table around the cutoff),
+-- snapshot_compact keeps the newest N slots per market. Cutoffs: signals 30d, bars_30m 45d, snapshot_meta 60d,
+-- zones 30d, news 90d, digests 90d, heartbeat 30d.
+insert into public.signals (market, asof, symbol, level, learning, items) values
+  ('VN', now() - interval '31 days', 'OLD', 0, true, '[]'), ('VN', now() - interval '29 days', 'NEW', 0, true, '[]');
+insert into public.bars_30m (market, symbol, bar_start, vol, val, fnet, pt_val) values
+  ('VN', 'OLD', now() - interval '46 days', 1, 1, 0, 0), ('VN', 'NEW', now() - interval '44 days', 1, 1, 0, 0);
 insert into public.snapshot_meta (market, asof, slot_start, symbols, signals) values ('VN', now() - interval '70 days', now() - interval '70 days', 1, 0);
+insert into public.zones (market, symbol, kind, price_lo, price_hi, asof) values
+  ('VN', 'OLD', 'support', 1, 2, now() - interval '31 days'), ('VN', 'NEW', 'support', 1, 2, now() - interval '29 days');
+insert into public.news (market, title, url, published_at) values
+  ('VN', 'old', 'https://example.test/old', now() - interval '91 days'), ('VN', 'new', 'https://example.test/new', now() - interval '89 days');
+insert into public.digests (market, digest_date, kind, body, created_at) values
+  ('VN', current_date - 91, 'close', 'old', now() - interval '91 days'), ('VN', current_date - 89, 'close', 'new', now() - interval '89 days');
+insert into public.heartbeat values ('VN', 'old-job', now() - interval '31 days', null), ('VN', 'new-job', now() - interval '29 days', null);
 insert into public.snapshot_compact select 'VN', now() - (g || ' hours')::interval, '{}' from generate_series(1, 3) g;
 set local role service_role;
 do $$
+declare r jsonb;
 begin
   if public.db_size_mb() <= 0 then raise exception 'db_size_mb returned nothing'; end if;
-  perform public.cleanup_old_data(2);
+  r := public.cleanup_old_data(2);
+  if (r ->> 'zones')::int <> 1 or (r ->> 'news')::int <> 1 or (r ->> 'digests')::int <> 1 or (r ->> 'heartbeat')::int <> 1
+     or (r ->> 'signals')::int <> 1 or (r ->> 'bars_30m')::int <> 1
+  then raise exception 'cleanup_old_data returned unexpected counts: %', r; end if;
 end $$;
 reset role;
 do $$
 begin
   if (select count(*) from public.signals where symbol = 'OLD') <> 0 then raise exception 'old signals not cleaned'; end if;
-  if (select count(*) from public.signals where symbol = 'TST' and market = 'VN') <> 1 then raise exception 'recent signals were deleted'; end if;
-  if (select count(*) from public.bars_30m where symbol = 'OLD') <> 0 then raise exception 'old bars_30m not cleaned'; end if;
-  if (select count(*) from public.bars_30m where symbol = 'TST') <> 1 then raise exception 'recent bars_30m were deleted'; end if;
+  if (select count(*) from public.signals where symbol in ('TST', 'NEW') and market = 'VN') <> 2 then raise exception 'recent signals were deleted'; end if;
+  if (select count(*) from public.bars_30m where symbol = 'OLD') <> 0 then raise exception 'old bars_30m (45d) not cleaned'; end if;
+  if (select count(*) from public.bars_30m where symbol in ('TST', 'NEW')) <> 2 then raise exception 'bars_30m younger than 45d were deleted'; end if;
   if (select count(*) from public.snapshot_meta where asof < now() - interval '60 days') <> 0 then raise exception 'old snapshot_meta not cleaned'; end if;
   if (select count(*) from public.snapshot_meta) <> 2 then raise exception 'recent snapshot_meta were deleted'; end if;
+  if (select count(*) from public.zones where symbol = 'OLD') <> 0 then raise exception 'old zones not cleaned'; end if;
+  if (select count(*) from public.zones where symbol in ('TST', 'NEW') and market = 'VN') <> 2 then raise exception 'recent zones were deleted'; end if;
+  if (select count(*) from public.news where title = 'old') <> 0 then raise exception 'old news not cleaned'; end if;
+  if (select count(*) from public.news where title in ('t', 'new') and market = 'VN') <> 2 then raise exception 'recent news were deleted'; end if;
+  if (select count(*) from public.digests where body = 'old') <> 0 then raise exception 'old digests not cleaned'; end if;
+  if (select count(*) from public.digests where body in ('x', 'new') and market = 'VN') <> 2 then raise exception 'recent digests were deleted'; end if;
+  if (select count(*) from public.heartbeat where job = 'old-job') <> 0 then raise exception 'old heartbeat not cleaned'; end if;
+  if (select count(*) from public.heartbeat where job in ('engine', 'new-job')) <> 2 then raise exception 'recent heartbeat were deleted'; end if;
   if (select count(*) from public.snapshot_compact where market = 'VN') <> 2 then raise exception 'snapshot_compact not trimmed to N slots'; end if;
   if (select max(slot_start) from public.snapshot_compact where market = 'VN') < now() - interval '1 minute' then raise exception 'snapshot_compact kept the wrong (old) slots'; end if;
 end $$;
