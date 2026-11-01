@@ -59,6 +59,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python3 -m pipeline.run --market VN
+      - name: Write bulletin
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 -m pipeline.bulletin --market VN
       - name: Alert on failure
         if: failure()
         env:

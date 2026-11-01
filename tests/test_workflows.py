@@ -38,6 +38,22 @@ class SnapshotWorkflowTest(unittest.TestCase):
         self.assertIn("python3 -m pipeline.cleanup", read("eod.yml"))
 
 
+class BulletinStepTest(unittest.TestCase):
+    def test_each_snapshot_workflow_writes_its_bulletin_after_the_snapshot(self):
+        for n, m in (("snap-vn.yml", "VN"), ("snap-us.yml", "US")):
+            t = read(n)
+            self.assertIn(f"python3 -m pipeline.bulletin --market {m}", t, n)
+            self.assertLess(t.index(f"pipeline.run --market {m}"), t.index("pipeline.bulletin"), n)
+            i = t.index("- name: Write bulletin")
+            step = t[i:t.index("- name: Alert on failure")]
+            self.assertIn("ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}", step, n)
+            self.assertIn("SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}", step, n)
+
+    def test_the_model_key_is_only_given_to_the_bulletin_step(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            self.assertEqual(read(n).count("secrets.ANTHROPIC_API_KEY"), 1, n)
+
+
 class FailureAlertTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
 
