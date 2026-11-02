@@ -1,6 +1,8 @@
 import unittest
 
-from pipeline.signals import evaluate, robust_z
+from datetime import time
+
+from pipeline.signals import US_SESSIONS, VN_SESSIONS, evaluate, robust_z, trading_minutes
 
 TH = {"min_days": 20, "s1_z": 3.5, "min_vol": 10_000, "s2_share": 0.2, "s3_value": 10_000_000_000}
 HIST = [90_000, 100_000, 110_000, 100_000, 95_000, 105_000, 100_000, 98_000, 102_000, 100_000] * 2  # 20 days
@@ -47,6 +49,142 @@ class EvaluateTest(unittest.TestCase):
         self.assertTrue(r["learning"])
         self.assertEqual(ids(r), ["S2", "S3"])  # S1 needs the baseline, others still reported
         self.assertEqual(r["level"], 1)
+
+
+TH2 = {**TH, "s4_k": 1.5, "s5_k": 1.0}
+BIG = {"vol": 100_000, "val": 5_000_000_000, "fnet": 0, "pt_val": 0}
+
+
+class TradingMinutesTest(unittest.TestCase):
+    def test_vn_window_across_lunch_break_skips_the_break(self):
+        self.assertEqual(trading_minutes(time(11, 15), time(13, 15), VN_SESSIONS), 30)
+
+    def test_window_inside_one_session_is_plain_difference(self):
+        self.assertEqual(trading_minutes(time(9, 30), time(10, 0), VN_SESSIONS), 30)
+
+    def test_time_before_open_and_after_close_is_clipped(self):
+        self.assertEqual(trading_minutes(time(9, 0), time(9, 45), US_SESSIONS), 15)
+        self.assertEqual(trading_minutes(time(15, 30), time(16, 40), US_SESSIONS), 30)
+
+    def test_window_fully_outside_sessions_is_zero(self):
+        self.assertEqual(trading_minutes(time(11, 35), time(12, 55), VN_SESSIONS), 0)
+
+
+class PerMinuteS1Test(unittest.TestCase):
+    HIST_MIN = [30] * 20  # every past window held 30 trading minutes
+
+    def test_same_volume_in_fewer_trading_minutes_triggers_s1(self):
+        # 100k over 15 trading minutes (lunch break inside the window) is twice the usual pace
+        raw = evaluate(BIG, HIST, TH)
+        per_min = evaluate(BIG, HIST, TH, minutes=15, history_minutes=self.HIST_MIN)
+        self.assertNotIn("S1", ids(raw))
+        self.assertIn("S1", ids(per_min))
+
+    def test_usual_pace_in_a_shorter_window_does_not_trigger(self):
+        d = {**BIG, "vol": 50_000}
+        r = evaluate(d, HIST, TH, minutes=15, history_minutes=self.HIST_MIN)
+        self.assertNotIn("S1", ids(r))
+
+    def test_zero_minutes_is_skipped_instead_of_dividing(self):
+        r = evaluate(BIG, HIST, TH, minutes=0, history_minutes=self.HIST_MIN)
+        self.assertNotIn("S1", ids(r))
+
+    def test_history_length_must_match(self):
+        with self.assertRaises(ValueError):
+            evaluate(BIG, HIST, TH, minutes=30, history_minutes=[30] * 5)
+
+    def test_minutes_without_history_minutes_is_rejected(self):
+        with self.assertRaises(ValueError):
+            evaluate(BIG, HIST, TH, minutes=30)
+
+
+class LearningCountTest(unittest.TestCase):
+    def test_learning_counts_the_baseline_actually_used_not_the_raw_history(self):
+        # 20 past windows, but 8 of them had no trading minutes: only 12 usable days
+        mins = [30] * 12 + [0] * 8
+        d = {**BIG, "vol": 400_000, "fnet": 120_000}
+        r = evaluate(d, HIST, TH, minutes=15, history_minutes=mins)
+        self.assertTrue(r["learning"])
+        self.assertNotIn("S1", ids(r))
+        self.assertEqual(r["level"], 1)
+
+    def test_full_usable_baseline_is_not_learning(self):
+        r = evaluate(BIG, HIST, TH, minutes=15, history_minutes=[30] * 20)
+        self.assertFalse(r["learning"])
+
+    def test_raw_history_still_decides_when_minutes_are_not_given(self):
+        self.assertTrue(evaluate(BIG, HIST[:19], TH)["learning"])
+
+
+class EmptyBaselineTest(unittest.TestCase):
+    def test_min_days_zero_with_no_history_does_not_crash(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate(BIG, [], th)
+        self.assertEqual((ids(r), r["learning"]), ([], False))
+
+    def test_min_days_zero_with_only_zero_minute_history_does_not_crash(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate(BIG, HIST[:3], th, minutes=15, history_minutes=[0, 0, 0])
+        self.assertNotIn("S1", ids(r))
+
+    def test_other_signals_still_work_with_an_empty_baseline(self):
+        th = {**TH, "min_days": 0}
+        r = evaluate({**BIG, "fnet": 50_000}, [], th)
+        self.assertEqual(ids(r), ["S2"])
+
+
+class S4Test(unittest.TestCase):
+    def test_move_of_at_least_k_atr_triggers_with_direction(self):
+        up = evaluate({**BIG, "px_move": 3.0}, HIST, TH2, atr=2.0)
+        down = evaluate({**BIG, "px_move": -3.0}, HIST, TH2, atr=2.0)
+        self.assertEqual([(s["id"], s["dir"]) for s in up["signals"]], [("S4", "up")])
+        self.assertEqual([(s["id"], s["dir"]) for s in down["signals"]], [("S4", "down")])
+
+    def test_smaller_move_does_not_trigger(self):
+        self.assertEqual(ids(evaluate({**BIG, "px_move": 2.9}, HIST, TH2, atr=2.0)), [])
+
+    def test_without_atr_or_move_or_threshold_it_stays_off(self):
+        self.assertEqual(ids(evaluate({**BIG, "px_move": 9.0}, HIST, TH2)), [])
+        self.assertEqual(ids(evaluate(BIG, HIST, TH2, atr=2.0)), [])
+        self.assertEqual(ids(evaluate({**BIG, "px_move": 9.0}, HIST, TH, atr=2.0)), [])
+
+    def test_tiny_volume_blocks_it(self):
+        d = {"vol": 500, "val": 1, "fnet": 0, "pt_val": 0, "px_move": 9.0}
+        self.assertEqual(ids(evaluate(d, HIST, TH2, atr=2.0)), [])
+
+    def test_counts_toward_level_and_learning_cap(self):
+        d = {**BIG, "fnet": 30_000, "px_move": 3.0}
+        self.assertEqual(evaluate(d, HIST, TH2, atr=2.0)["level"], 2)
+        r = evaluate(d, HIST[:5], TH2, atr=2.0)
+        self.assertEqual((ids(r), r["level"]), (["S2", "S4"], 1))
+
+
+class S5Test(unittest.TestCase):
+    US_DAY = {**BIG, "open": 105.0, "prev_close": 100.0}
+
+    def test_us_gap_of_at_least_k_atr_triggers_with_direction(self):
+        r = evaluate(self.US_DAY, HIST, TH2, atr=4.0, market="US")
+        self.assertEqual([(s["id"], s["dir"]) for s in r["signals"]], [("S5", "up")])
+        gap_down = {**BIG, "open": 95.0, "prev_close": 100.0}
+        r = evaluate(gap_down, HIST, TH2, atr=4.0, market="US")
+        self.assertEqual([(s["id"], s["dir"]) for s in r["signals"]], [("S5", "down")])
+
+    def test_small_gap_does_not_trigger(self):
+        d = {**BIG, "open": 103.0, "prev_close": 100.0}
+        self.assertEqual(ids(evaluate(d, HIST, TH2, atr=4.0, market="US")), [])
+
+    def test_vn_market_never_reports_s5(self):
+        self.assertEqual(ids(evaluate(self.US_DAY, HIST, TH2, atr=4.0, market="VN")), [])
+        self.assertEqual(ids(evaluate(self.US_DAY, HIST, TH2, atr=4.0)), [])
+
+    def test_missing_inputs_keep_it_off(self):
+        self.assertEqual(ids(evaluate(self.US_DAY, HIST, TH2, market="US")), [])
+        self.assertEqual(ids(evaluate(BIG, HIST, TH2, atr=4.0, market="US")), [])
+
+    def test_gap_signal_does_not_need_window_volume(self):
+        # the opening gap is a fact of the session, not of this window
+        d = {"vol": 0, "val": 0, "fnet": 0, "pt_val": 0, "open": 105.0, "prev_close": 100.0}
+        self.assertEqual(ids(evaluate(d, HIST, TH2, atr=4.0, market="US")), ["S5"])
 
 
 if __name__ == "__main__":

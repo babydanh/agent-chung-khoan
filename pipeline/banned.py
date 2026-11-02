@@ -32,6 +32,22 @@ _PATTERNS = [re.compile(p) for p in (
     r"tat tay",
     r"\ball\s*in\b",
     r"phim hang",
+    # advice in headlines; "khoi ngoai mua vao / ban ra" (plain flow reporting) must stay allowed.
+    # "dang mua" also catches "đang mua" once accents are gone: a rare false alarm, one headline dropped.
+    r"\bdang\s+(mua|ban)\b",
+    r"\bnen\b(\s+\w+){0,3}\s+(mua vao|ban ra)\b",
+    r"\bse\s+(tang|giam)\b",
+    r"\bgap\s+(doi|ba)\b",
+    # direct calls to act, vi and en (accents are gone by the time these run)
+    r"\bhay\s+(mua|ban)\b",
+    r"\bnen\s+can\s+nhac\s+(mua|ban)\b",
+    r"\bnen\s+(xuong\s+tien|giai\s+ngan|chot\s+loi|cat\s+lo|gom|canh\s+mua|canh\s+ban)\b",
+    r"\bco\s+hoi\s+(mua|ban)\b",
+    r"\bgood\s+time\s+to\s+(buy|sell)\b",
+    r"\bconsider\s+(buying|selling)\b",
+    r"\btime\s+to\s+(buy|sell)\b",
+    # forecasts of direction
+    r"\b(du\s+kien|ky\s+vong|nhieu\s+kha\s+nang|co\s+the)\s+(se\s+)?(tang|giam)\b",
     r"\b(should|strong)\s+(buy|sell)\b",
     r"price target",
     r"\brecommend",

@@ -5,10 +5,11 @@ from zoneinfo import ZoneInfo
 
 TZ = {"VN": ZoneInfo("Asia/Ho_Chi_Minh"), "US": ZoneInfo("America/New_York")}
 # Run windows, not exchange hours: they include the last run after the close.
-VN_WINDOWS = ((time(9, 0), time(11, 45)), (time(13, 0), time(15, 10)))
+# The ends leave room for late cron starts; double runs are stopped by snapshot_meta, not by this gate.
+VN_WINDOWS = ((time(9, 0), time(12, 15)), (time(13, 0), time(15, 40)))
 US_FIRST_RUN = time(10, 0)
 US_CLOSE, US_EARLY_CLOSE = time(16, 0), time(13, 0)
-US_LAST_RUN_AFTER_CLOSE = timedelta(minutes=50)  # the feed is 15 minutes late
+US_LAST_RUN_AFTER_CLOSE = timedelta(minutes=80)  # the feed is 15 minutes late, plus cron delay
 
 
 def load(path):
