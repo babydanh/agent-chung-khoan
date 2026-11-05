@@ -1,0 +1,7 @@
+{
+  "hot": 60,
+  "max_per_hour": 6,
+  "signal_level": 3,
+  "flow_level": 2,
+  "watch": {"VN": [], "US": []}
+}

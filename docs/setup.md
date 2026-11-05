@@ -17,7 +17,8 @@ Code đã đủ để chạy; còn lại là các bước cần quyền của ch
 4. Job `rls` của `db-test.yml` trên GitHub chưa từng chạy: xem kết quả lần đầu.
 
 ## 3. Việc code CHƯA có (đừng chờ nó chạy)
-- **Gửi push thật**: `pipeline/push.py` chỉ quyết định nội dung/thời điểm; `bulletin.py` ghi quyết định vào `heartbeat.detail.push`. Chưa có kênh gửi (FCM/…) và chưa có hàng đợi giữ bản Mỹ 22:00–07:00 đến 07:00.
+- **Thông báo Telegram** (`pipeline/notify.py`, bước `Send notifications` trong `snap-vn.yml` và `snap-us.yml`): gửi mã vừa lên mức 3 và tin nóng của VN. Không dùng model: loại sự kiện lấy bằng từ khoá (`pipeline/newsrank.py`), điểm nóng tính bằng công thức (độ mới 30, số nguồn 20, loại sự kiện 20, mã theo dõi 15, khớp dòng tiền 15), ngưỡng và danh sách mã theo dõi nằm ở `config/notify.json`. Giờ yên 22:00–07:00 giữ tin trong hàng đợi (lưu ở dòng heartbeat `VN/notify`, không cần bảng mới), tối đa `max_per_hour` tin mỗi giờ, phần dư gộp thành một tin. Cần secret `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
+- **Chưa có**: đẩy tới app (FCM); thống kê "tác động lịch sử" của tin (cần nến ngày `bars_1d`, chưa có nguồn); tin của Mỹ.
 - **S4/S5** (giá so với ATR, gap mở cửa Mỹ) chưa bật vì chưa có nguồn nến ngày cho `bars_1d` (`docs/s4-s5-pending.md`).
 - **Model ID**: `pipeline/agent.py` đặt `MODEL = "claude-haiku-5-5"` (test cố định giá trị này). Nếu API trả 400/404 thì mỗi lần chạy bản tin sẽ đỏ (chủ ý, để thấy lỗi cấu hình) và dùng bản tin dự phòng do code dựng. Kiểm tên model với tài khoản Anthropic của bạn trước lần chạy đầu; PR #4 từng ghi `claude-haiku-5-5` không tồn tại và dùng `claude-haiku-4-5`. Nếu đổi: sửa `MODEL` và hai test ghim giá trị.
 - Ứng dụng (đọc `digests`, `news`, realtime `snapshot_meta`) không nằm trong repo này.
