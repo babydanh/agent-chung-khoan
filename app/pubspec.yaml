@@ -17,6 +17,10 @@ dependencies:
   workmanager: ^0.10.10
   xml: ^7.1.0
 
+# shared_preferences_android 2.5 pulls in a native (jni/CMake) build that needs the 2 GB Android NDK; 2.4 does not.
+dependency_overrides:
+  shared_preferences_android: 2.4.28
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
