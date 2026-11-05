@@ -1,0 +1,64 @@
+Container(
+  width: 390,
+  height: 40,
+  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 35.34,
+        height: 24,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "VN",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 75.06,
+        height: 24,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "Hôm nay",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

@@ -1,0 +1,249 @@
+Container(
+  width: 390,
+  height: 57,
+  decoration: BoxDecoration(
+    color: Color(0xFF171B1F),
+    border: Border.all(color: Color(0xFF262D33), width: 1),
+  ),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 78,
+        height: 56,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 28,
+              top: 7.59,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+            Positioned(
+              left: 21.8,
+              top: 31.59,
+              child: Container(
+                width: 34.39,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Bảng",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2DD4BF),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 78,
+        height: 56,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 28,
+              top: 7.59,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+            Positioned(
+              left: 13.11,
+              top: 31.59,
+              child: Container(
+                width: 51.78,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Theo dõi",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 78,
+        height: 56,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 28,
+              top: 7.59,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+            Positioned(
+              left: 30.05,
+              top: 31.59,
+              child: Container(
+                width: 17.91,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Tin",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 78,
+        height: 56,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 28,
+              top: 7.59,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+            Positioned(
+              left: 23.88,
+              top: 31.59,
+              child: Container(
+                width: 30.23,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Vùng",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 78,
+        height: 56,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 28,
+              top: 7.59,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+            Positioned(
+              left: 17.72,
+              top: 31.59,
+              child: Container(
+                width: 42.56,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Cài đặt",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

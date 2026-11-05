@@ -1,0 +1,123 @@
+Container(
+  width: 348,
+  height: 66,
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 16,
+    children: [
+      Container(
+        width: 348,
+        height: 14,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Text(
+                "Sàn",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFA0AAB3),
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 36,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 16,
+          children: [
+            Container(
+              width: 77.45,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF2DD4BF),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "HOSE",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF052420),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 67.13,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "HNX",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AAB3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 93.98,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "UPCOM",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AAB3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

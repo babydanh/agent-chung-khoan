@@ -1,0 +1,89 @@
+Container(
+  width: 375,
+  height: 52,
+  padding: EdgeInsets.fromLTRB(16, 0, 8, 0),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 12,
+    children: [
+      Container(
+        width: 295,
+        height: 33,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 295,
+              height: 19,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Text(
+                      "SSI",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE9EDF0),
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 295,
+              height: 14,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Text(
+                      "SSI",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 11,
+              top: 11,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

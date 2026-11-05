@@ -1,0 +1,89 @@
+Container(
+  width: 409.63,
+  height: 56,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 16,
+        top: 0,
+        child: Container(
+          width: 377.63,
+          height: 56,
+          padding: EdgeInsets.fromLTRB(16, 8, 8, 8),
+          decoration: BoxDecoration(
+            color: Color(0xFF171B1F),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Color(0xFFFF5C5C), width: 1),
+          ),
+          alignment: Alignment.topLeft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 12,
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+              ),
+              Container(
+                width: 228.22,
+                height: 19.59,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Lỗi tải",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE9EDF0),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 79.41,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Color(0xFF171B1F),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Color(0xFF262D33), width: 1),
+                ),
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 13,
+                      top: 9.2,
+                      child: Text(
+                        "Thử lại",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE9EDF0),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

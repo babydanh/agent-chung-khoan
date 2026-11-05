@@ -1,0 +1,59 @@
+Container(
+  width: 334,
+  height: 51.19,
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 12,
+    children: [
+      Container(
+        width: 334,
+        height: 16.8,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "Nguồn",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 334,
+        height: 22.39,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "NASDAQ",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

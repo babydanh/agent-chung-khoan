@@ -1,0 +1,82 @@
+Container(
+  width: 848,
+  height: 1208,
+  decoration: BoxDecoration(
+    color: Color(0xFF0F1214),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 14,
+        top: 14,
+        child: Container(
+          width: 820,
+          height: 1180,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 0,
+                top: 24,
+                child: Container(
+                  width: 820,
+                  height: 1144,
+                  decoration: BoxDecoration(
+                    color: Color(0xFF0F1214),
+                  ),
+                  alignment: Alignment.topLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 820,
+                        height: 1087,
+                        alignment: Alignment.topLeft,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // tcol …
+                            const SizedBox(),
+                            // tcol …
+                            const SizedBox(),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 820,
+                        height: 57,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF171B1F),
+                          border: Border.all(color: Color(0xFF262D33), width: 1),
+                        ),
+                        alignment: Alignment.topLeft,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // button …
+                            const SizedBox(),
+                            // button …
+                            const SizedBox(),
+                            // button …
+                            const SizedBox(),
+                            // button …
+                            const SizedBox(),
+                            // button …
+                            const SizedBox(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

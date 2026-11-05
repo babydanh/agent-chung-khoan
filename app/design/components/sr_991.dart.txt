@@ -1,0 +1,181 @@
+Container(
+  width: 390,
+  height: 56.19,
+  decoration: BoxDecoration(
+    color: Color(0xFF0F1214),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 16,
+        top: 8,
+        child: Container(
+          width: 126,
+          height: 39.19,
+          padding: EdgeInsets.fromLTRB(0, 1, 0, 0),
+          alignment: Alignment.topLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 2.39,
+            children: [
+              Text(
+                "VIC",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              ),
+              Container(
+                width: 126,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "Vingroup",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 150,
+        top: 16.39,
+        child: Container(
+          width: 72,
+          height: 22.39,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 21.39,
+                top: 1,
+                child: Text(
+                  "38,60",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF22C7E6),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 230,
+        top: 17.8,
+        child: Container(
+          width: 72,
+          height: 19.59,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 11.69,
+                top: 1,
+                child: Text(
+                  "−6,99%",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF22C7E6),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 326,
+        top: 15.59,
+        child: Container(
+          width: 48,
+          height: 24,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                child: Container(
+                  width: 48,
+                  height: 24,
+                  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1F252A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.topLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 4,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5B301),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Color(0xFFF5B301), width: 1),
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF5B301),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Color(0xFFF5B301), width: 1),
+                        ),
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Color(0xFF7F8A94), width: 1),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

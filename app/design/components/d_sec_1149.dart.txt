@@ -1,0 +1,175 @@
+Container(
+  width: 390,
+  height: 45.19,
+  padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    spacing: 8,
+    children: [
+      Container(
+        width: 207.08,
+        height: 30.8,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 207.08,
+                height: 30.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: -2,
+                      child: Text(
+                        "131,20",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2FD36B),
+                          height: 1.1,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 68.92,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 68.92,
+                height: 22.39,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "+2,10%",
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2FD36B),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 32.14,
+              top: 24.39,
+              child: Container(
+                width: 36.78,
+                height: 16.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 1,
+                      child: Text(
+                        "+2,70",
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFFA0AAB3),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 66,
+        height: 32,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 66,
+                height: 32,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6A3D),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Color(0xFFFF6A3D), width: 1),
+                      ),
+                    ),
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6A3D),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Color(0xFFFF6A3D), width: 1),
+                      ),
+                    ),
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6A3D),
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Color(0xFFFF6A3D), width: 1),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

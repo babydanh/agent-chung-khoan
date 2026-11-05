@@ -1,0 +1,75 @@
+Container(
+  width: 390,
+  height: 46.8,
+  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    spacing: 8,
+    children: [
+      Container(
+        width: 289.69,
+        height: 30.8,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 289.69,
+                height: 30.8,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: -2,
+                      child: Text(
+                        "131,20",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2FD36B),
+                          height: 1.1,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 60.31,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "+2,10%",
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2FD36B),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

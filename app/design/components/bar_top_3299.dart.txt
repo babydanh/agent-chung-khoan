@@ -1,0 +1,110 @@
+Container(
+  width: 390,
+  height: 48,
+  padding: EdgeInsets.fromLTRB(16, 0, 8, 0),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 116,
+        height: 44,
+        padding: EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 56,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Color(0xFF171B1F),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 16.72,
+                    top: 11.2,
+                    child: Text(
+                      "VN",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 56,
+              height: 40,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 17.27,
+                    top: 11.2,
+                    child: Text(
+                      "US",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 78.39,
+        height: 16.8,
+        padding: EdgeInsets.fromLTRB(0, 0, 8, 0),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+            ),
+            Text(
+              "Gần giá",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

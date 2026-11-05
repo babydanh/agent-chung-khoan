@@ -1,0 +1,87 @@
+Container(
+  width: 358,
+  height: 63.19,
+  padding: EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Color(0xFF171B1F),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 12,
+    children: [
+      Container(
+        width: 22,
+        height: 22,
+      ),
+      Container(
+        width: 280,
+        height: 39.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 280,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "Heartbeat",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 280,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 245.41,
+                    top: 1,
+                    child: Text(
+                      "09:41",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: Color(0xFF2FD36B),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+    ],
+  ),
+)

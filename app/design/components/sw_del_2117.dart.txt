@@ -1,0 +1,64 @@
+Container(
+  width: 88,
+  height: 56,
+  decoration: BoxDecoration(
+    color: Color(0xFFFF5C5C),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 0,
+        top: 0,
+        child: Container(
+          width: 88,
+          height: 56,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 34,
+                top: 7.2,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                )
+              ),
+              Positioned(
+                left: 29.06,
+                top: 29.2,
+                child: Container(
+                  width: 29.86,
+                  height: 19.59,
+                  alignment: Alignment.topLeft,
+                  child: Stack(
+                    alignment: Alignment.topLeft,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 1,
+                        child: Text(
+                          "Xoá",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: "Inter",
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFFFFFFF),
+                            height: 1.4,
+                          ),
+                        )
+                      ),
+                    ],
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

@@ -1,0 +1,22 @@
+Container(
+  width: 390,
+  height: 35.59,
+  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 8,
+    children: [
+      Text(
+        "Hôm qua",
+        style: TextStyle(
+          fontFamily: "Inter",
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFFE9EDF0),
+          height: 1.4,
+        ),
+      ),
+    ],
+  ),
+)

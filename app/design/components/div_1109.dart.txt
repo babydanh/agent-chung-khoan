@@ -1,0 +1,60 @@
+Container(
+  width: 390,
+  height: 187.59,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 0,
+        top: 0,
+        child: Container(
+          width: 390,
+          height: 187.59,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 179,
+                top: 64,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                )
+              ),
+              Positioned(
+                left: 149.11,
+                top: 104,
+                child: Container(
+                  width: 91.77,
+                  height: 19.59,
+                  alignment: Alignment.topLeft,
+                  child: Stack(
+                    alignment: Alignment.topLeft,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 1,
+                        child: Text(
+                          "Không có mã",
+                          style: TextStyle(
+                            fontFamily: "Inter",
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFFA0AAB3),
+                            height: 1.4,
+                          ),
+                        )
+                      ),
+                    ],
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)
