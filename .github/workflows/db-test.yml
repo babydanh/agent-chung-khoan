@@ -2,6 +2,9 @@ name: db-test
 
 on:
   pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/db-test.yml"
   workflow_dispatch:
 
 permissions:
