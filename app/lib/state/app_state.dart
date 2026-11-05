@@ -31,13 +31,13 @@ class Filters {
 }
 
 class NotifyPrefs {
-  const NotifyPrefs({this.vn = true, this.us = true, this.minLevel = 3, this.digest = true, this.quiet = true});
-  final bool vn, us, digest, quiet; // quiet = 22:00-07:00
-  final int minLevel;
+  const NotifyPrefs({this.vn = true, this.us = true, this.minLevel = 3, this.digest = true, this.quiet = true, this.news = true, this.hot = 60, this.maxPerHour = 6});
+  final bool vn, us, digest, quiet, news; // quiet = 22:00-07:00; news = hot headlines
+  final int minLevel, hot, maxPerHour;
 
-  NotifyPrefs copyWith({bool? vn, bool? us, bool? digest, bool? quiet, int? minLevel}) => NotifyPrefs(
-        vn: vn ?? this.vn, us: us ?? this.us, digest: digest ?? this.digest, quiet: quiet ?? this.quiet,
-        minLevel: minLevel ?? this.minLevel);
+  NotifyPrefs copyWith({bool? vn, bool? us, bool? digest, bool? quiet, bool? news, int? minLevel, int? hot, int? maxPerHour}) => NotifyPrefs(
+        vn: vn ?? this.vn, us: us ?? this.us, digest: digest ?? this.digest, quiet: quiet ?? this.quiet, news: news ?? this.news,
+        minLevel: minLevel ?? this.minLevel, hot: hot ?? this.hot, maxPerHour: maxPerHour ?? this.maxPerHour);
 }
 
 /// Opening hours in Vietnam time. Holidays are not known to the app; the bot's own data age tells the rest.
@@ -92,7 +92,8 @@ class AppState extends ChangeNotifier {
     recentSearches = _prefs.getStringList('recent') ?? [];
     notify = NotifyPrefs(
       vn: _prefs.getBool('n_vn') ?? true, us: _prefs.getBool('n_us') ?? true, digest: _prefs.getBool('n_dg') ?? true,
-      quiet: _prefs.getBool('n_quiet') ?? true, minLevel: (_prefs.getInt('n_min') ?? 3).clamp(1, 3));
+      quiet: _prefs.getBool('n_quiet') ?? true, minLevel: (_prefs.getInt('n_min') ?? 3).clamp(1, 3),
+      news: _prefs.getBool('n_news') ?? true, hot: (_prefs.getInt('n_hot') ?? 60).clamp(30, 95), maxPerHour: (_prefs.getInt('n_max') ?? 6).clamp(1, 20));
     connection = SupabaseConfig(
       url: _prefs.getString('c_url') ?? '', anonKey: _prefs.getString('c_key') ?? '',
       email: _prefs.getString('c_mail') ?? '', password: _prefs.getString('c_pass') ?? '');
@@ -282,6 +283,9 @@ class AppState extends ChangeNotifier {
     await _prefs.setBool('n_dg', p.digest);
     await _prefs.setBool('n_quiet', p.quiet);
     await _prefs.setInt('n_min', p.minLevel);
+    await _prefs.setBool('n_news', p.news);
+    await _prefs.setInt('n_hot', p.hot);
+    await _prefs.setInt('n_max', p.maxPerHour);
     notifyListeners();
   }
 

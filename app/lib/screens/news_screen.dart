@@ -144,7 +144,7 @@ class DigestDetail extends StatelessWidget {
             Wrap(spacing: Sp.s2, children: [for (final t in tickers) Pill(t, onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DetailScreen(market: known[t]!, symbol: t))))]),
           ],
           const SizedBox(height: Sp.s5),
-          Text('Chỉ là thông tin, không phải khuyến nghị.', style: AppText.base(c.text3, size: Ts.xs)),
+          Text('Chỉ là thông tin, không phải khuyến nghị đầu tư.', style: AppText.base(c.text3, size: Ts.xs)),
         ])),
       ])),
     );

@@ -54,7 +54,7 @@ class SettingsScreen extends StatelessWidget {
         row('clock', 'Tình trạng', onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DataStatusScreen()))),
         const SectionTitle('Thông báo'),
         row('bell', 'Hộp thư và lọc', onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NotifySettings()))),
-        Padding(padding: const EdgeInsets.all(Sp.s5), child: Text('Chỉ là thông tin, không phải khuyến nghị.', textAlign: TextAlign.center, style: AppText.base(c.text3, size: Ts.xs))),
+        Padding(padding: const EdgeInsets.all(Sp.s5), child: Text('Chỉ là thông tin, không phải khuyến nghị đầu tư.', textAlign: TextAlign.center, style: AppText.base(c.text3, size: Ts.xs))),
         Center(child: Text('Phiên bản 0.1.0', style: AppText.num(c.text3, size: Ts.xs, weight: FontWeight.w400))),
         const SizedBox(height: Sp.s5),
       ]),
