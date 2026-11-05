@@ -1,0 +1,132 @@
+Container(
+  width: 358,
+  height: 41.19,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 61.75,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Container(
+              width: 61.75,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "Thấp",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 61.75,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "129,00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 61.75,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Container(
+              width: 61.75,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 38.67,
+                    top: 1,
+                    child: Text(
+                      "Cao",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 61.75,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "132,50",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

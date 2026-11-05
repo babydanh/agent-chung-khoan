@@ -1,0 +1,44 @@
+Container(
+  width: 390,
+  height: 52,
+  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 12,
+    children: [
+      Container(
+        width: 20,
+        height: 20,
+      ),
+      Container(
+        width: 298,
+        height: 22.39,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "Ngưỡng",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 16,
+        height: 16,
+      ),
+    ],
+  ),
+)

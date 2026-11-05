@@ -1,0 +1,18 @@
+Container(
+  width: 44,
+  height: 56,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 11,
+        top: 17,
+        child: Container(
+          width: 22,
+          height: 22,
+        )
+      ),
+    ],
+  ),
+)

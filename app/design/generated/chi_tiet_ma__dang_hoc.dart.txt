@@ -1,0 +1,283 @@
+Container(
+  width: 390,
+  height: 844,
+  decoration: BoxDecoration(
+    color: Color(0xFF0F1214),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 0,
+        top: 50,
+        child: Container(
+          width: 390,
+          height: 765,
+          decoration: BoxDecoration(
+            color: Color(0xFF0F1214),
+          ),
+          alignment: Alignment.topLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 390,
+                height: 708,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Container(
+                        width: 390,
+                        height: 708,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF0F1214),
+                        ),
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // bar …
+                            const SizedBox(),
+                            // od-scroll …
+                            const SizedBox(),
+                          ],
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 390,
+                height: 57,
+                decoration: BoxDecoration(
+                  color: Color(0xFF171B1F),
+                  border: Border.all(color: Color(0xFF262D33), width: 1),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 78,
+                      height: 56,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/board …
+                          const SizedBox(),
+                          // span …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 78,
+                      height: 56,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/star …
+                          const SizedBox(),
+                          // span …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 78,
+                      height: 56,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/news …
+                          const SizedBox(),
+                          // span …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 78,
+                      height: 56,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/zone …
+                          const SizedBox(),
+                          // span …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 78,
+                      height: 56,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/settings …
+                          const SizedBox(),
+                          // span …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 0,
+        top: 0,
+        child: Container(
+          width: 390,
+          height: 844,
+          decoration: BoxDecoration(
+            color: Color(0x8C000000),
+          ),
+        )
+      ),
+      Positioned(
+        left: 0,
+        top: 646,
+        child: Container(
+          width: 390,
+          height: 198,
+          padding: EdgeInsets.fromLTRB(16, 16, 0, 0),
+          decoration: BoxDecoration(
+            color: Color(0xFF171B1F),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          alignment: Alignment.topLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Container(
+                width: 358,
+                height: 44,
+                alignment: Alignment.topLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 105.61,
+                      height: 24,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // Đang học …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // icon/x …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 358,
+                height: 38,
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 8,
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                    ),
+                    Container(
+                      width: 328,
+                      height: 38,
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // Đang xây mức nền khối lư …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 358,
+                height: 35,
+                alignment: Alignment.topLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 8,
+                  children: [
+                    Container(
+                      width: 358,
+                      height: 19,
+                      alignment: Alignment.topLeft,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        spacing: 8,
+                        children: [
+                          // od-fill …
+                          const SizedBox(),
+                          // num …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 358,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Color(0xFF1F252A),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      alignment: Alignment.topLeft,
+                      child: Stack(
+                        alignment: Alignment.topLeft,
+                        children: [
+                          // i …
+                          const SizedBox(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

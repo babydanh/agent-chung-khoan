@@ -1,0 +1,68 @@
+Container(
+  width: 390,
+  height: 44,
+  padding: EdgeInsets.fromLTRB(16, 0, 8, 0),
+  decoration: BoxDecoration(
+    color: Color(0xFF1F252A),
+  ),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 20,
+        height: 20,
+      ),
+      Container(
+        width: 242.64,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "Đóng cửa",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 87.36,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "Mở 09:00 T6",
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

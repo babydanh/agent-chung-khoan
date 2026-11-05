@@ -1,0 +1,69 @@
+Container(
+  width: 358,
+  height: 19.59,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 16,
+    children: [
+      Container(
+        width: 44.55,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 12,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Color(0xFF2FD36B),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Text(
+              "Mới",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 139.77,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 12,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Color(0xFF7F8A94),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            Text(
+              "Cũ · quá 2 khung",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

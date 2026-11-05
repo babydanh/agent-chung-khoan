@@ -1,0 +1,1147 @@
+Container(
+  width: 380,
+  height: 404,
+  padding: EdgeInsets.fromLTRB(16, 12, 0, 0),
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 348,
+        height: 28,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "Khung",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 42.23,
+                    top: 1,
+                    child: Text(
+                      "NN mua",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 46.33,
+                    top: 1,
+                    child: Text(
+                      "NN bán",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 41.64,
+                    top: 1,
+                    child: Text(
+                      "NN ròng",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "09:00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "142k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "97k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+45k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "09:30",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "151k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "57k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+94k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "10:00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "157k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "89k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+68k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "10:30",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "167k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "84k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+83k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "11:00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "163k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "37k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 44.09,
+                    top: 1,
+                    child: Text(
+                      "+127k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "13:00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "171k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.83,
+                    top: 1,
+                    child: Text(
+                      "100k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+71k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "13:30",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "116k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "97k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+19k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "14:00",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 55.81,
+                    top: 1,
+                    child: Text(
+                      "138k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "33k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 44.09,
+                    top: 1,
+                    child: Text(
+                      "+105k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFF262D33), width: 1),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 52,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11.64,
+                    top: 1,
+                    child: Text(
+                      "14:30",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.73,
+                    top: 1,
+                    child: Text(
+                      "75k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.67,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 64.75,
+                    top: 1,
+                    child: Text(
+                      "47k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 90.66,
+              height: 19.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 53,
+                    top: 1,
+                    child: Text(
+                      "+28k",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2FD36B),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

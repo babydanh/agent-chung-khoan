@@ -1,0 +1,26 @@
+Container(
+  width: 348,
+  height: 16.8,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 14,
+        height: 14,
+      ),
+      Text(
+        "TÍN HIỆU",
+        style: TextStyle(
+          fontFamily: "Inter",
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFFA0AAB3),
+          height: 1.4,
+          letterSpacing: 0.72,
+        ),
+      ),
+    ],
+  ),
+)

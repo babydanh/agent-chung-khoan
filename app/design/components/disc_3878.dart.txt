@@ -1,0 +1,25 @@
+Container(
+  width: 390,
+  height: 64.8,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 70.84,
+        top: 25,
+        child: Text(
+          "Chỉ là thông tin, không phải khuyến nghị.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: "Inter",
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF7F8A94),
+            height: 1.4,
+          ),
+        )
+      ),
+    ],
+  ),
+)

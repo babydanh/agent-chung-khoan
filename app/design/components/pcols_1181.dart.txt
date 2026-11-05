@@ -1,0 +1,191 @@
+Container(
+  width: 348,
+  height: 41.19,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 116,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Container(
+              width: 116,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "Sàn",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 116,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "119,60",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF22C7E6),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 116,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Container(
+              width: 116,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 50.48,
+                    top: 1,
+                    child: Text(
+                      "TC",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 116,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 27.13,
+                    top: 1,
+                    child: Text(
+                      "128,50",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFF0C020),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 116,
+        height: 41.19,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 2,
+          children: [
+            Container(
+              width: 116,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 90.53,
+                    top: 1,
+                    child: Text(
+                      "Trần",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 116,
+              height: 22.39,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 54.25,
+                    top: 1,
+                    child: Text(
+                      "137,40",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFB980FF),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)
