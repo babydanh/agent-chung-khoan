@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The release build has no INTERNET permission unless it is declared here (debug/profile add it themselves). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="agent_ck"
+        android:label="Agent Chứng Khoán"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

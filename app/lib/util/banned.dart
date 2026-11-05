@@ -1,7 +1,7 @@
 /// Scanner for wording that reads as investment advice (same rules as pipeline/banned.py).
 ///
 /// Text is lower-cased and stripped of accents and invisible characters first, so one pattern covers "Nên mua",
-/// "nen mua" and "n<zero-width>ên mua". A false alarm only drops one sentence.
+/// "nen mua" and "n" + zero-width space + "ên mua". A false alarm only drops one sentence.
 library;
 
 /// Disclaimers shown next to the data; they contain a banned word on purpose.
@@ -54,7 +54,7 @@ final _patterns = <RegExp>[
 String normalize(String text) {
   var t = text.toLowerCase().replaceAll('đ', 'd');
   t = _stripAccents(t);
-  t = t.replaceAll(RegExp('[​-‏‪-‮⁠-⁤﻿­]'), '');
+  t = t.replaceAll(RegExp(r'[\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff\u00ad]'), '');
   return t.replaceAll(RegExp(r'\s+'), ' ');
 }
 

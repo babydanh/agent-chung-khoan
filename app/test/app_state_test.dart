@@ -1,8 +1,12 @@
 import 'package:agent_ck/data/repository.dart';
 import 'package:agent_ck/models/models.dart';
+import 'package:agent_ck/news/rank.dart';
+import 'package:agent_ck/notify/notifier.dart';
+import 'package:agent_ck/notify/planner.dart';
 import 'package:agent_ck/state/app_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Repository stub whose answers the test controls.
@@ -24,6 +28,14 @@ class FakeRepo implements Repository {
   Future<List<SignalRow>> signalHistory(Market market, String symbol, {int limit = 60}) async => const [];
 }
 
+class FakeNotifier implements Notifier {
+  final shown = <Notice>[];
+  @override
+  Future<void> show(Notice n) async => shown.add(n);
+  @override
+  Future<bool> requestPermission() async => true;
+}
+
 Quote _q(String s, {String ex = 'HOSE', double price = 110, double ref = 100, double vol = 1000, DateTime? asof}) =>
     Quote(market: Market.vn, symbol: s, exchange: ex, price: price, ref: ref, vol: vol, asof: asof);
 
@@ -43,6 +55,13 @@ Future<AppState> _state({FakeRepo? repo, DateTime? now}) async {
   await s.load(Market.vn);
   return s;
 }
+
+Story _story(String title, {String event = 'earnings', List<String> symbols = const ['AAA'], DateTime? at}) => Story(
+      head: Headline(title: title, link: 'https://x.test/${title.hashCode}', source: 'CafeF', published: at ?? DateTime.now(), symbols: symbols),
+      event: eventByKey(event),
+      sources: 1,
+      cluster: 'c$title',
+    );
 
 void main() {
   test('board sorts by level then volume', () async {
@@ -135,5 +154,77 @@ void main() {
     final s = await _state();
     expect(s.search(Market.vn, 'bb').map((q) => q.symbol), ['BBB']);
     expect(s.search(Market.vn, ''), isEmpty);
+  });
+
+  group('news and notifications in the app', () {
+    test('stories are ranked hottest first and the hot ones are flagged', () async {
+      final s = await _state();
+      await s.toggleWatch(Market.vn, 'AAA'); // a watched symbol adds 15 points
+      s.stories = [_story('Tin nhỏ', event: 'other', symbols: []), _story('AAA báo lãi quý 3', at: DateTime.now())];
+      expect(s.rankedStories().map((x) => x.head.title), ['AAA báo lãi quý 3', 'Tin nhỏ']);
+      expect(s.isHot(s.rankedStories().first), isTrue);
+      expect(s.isHot(s.rankedStories().last), isFalse);
+    });
+
+    test('a story that matches a money-flow signal is marked as a match', () async {
+      final s = await _state();
+      expect(s.flowMatch(_story('AAA ký hợp đồng', symbols: ['BBB'])), isTrue); // BBB is level 3
+      expect(s.flowMatch(_story('AAA ký hợp đồng', symbols: ['AAA'])), isFalse); // AAA is level 1
+    });
+
+    test('notifyNow shows what the planner says once and keeps the state', () async {
+      final n = FakeNotifier();
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data(asof: DateTime.now())), notifier: n, now: () => DateTime.utc(2026, 11, 5, 3));
+      await s.load(Market.vn);
+      expect(await s.notifyNow(), 2); // BBB and CCC are level 3
+      expect(n.shown.map((x) => x.title), unorderedEquals(['BBB · Mức 3', 'CCC · Mức 3']));
+      expect(await s.notifyNow(), 0);
+      expect(n.shown, hasLength(2));
+    });
+
+    test('notifyNow without a notifier does nothing', () async {
+      final s = await _state();
+      expect(await s.notifyNow(), 0);
+    });
+
+    test('the test notice and the permission request go through the notifier', () async {
+      final n = FakeNotifier();
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()), notifier: n);
+      expect(await s.allowNotifications(), isTrue);
+      await s.sendTestNotice();
+      expect(n.shown.single.title, 'Thông báo thử');
+      final bare = await _state();
+      expect(await bare.allowNotifications(), isFalse);
+      await bare.sendTestNotice(); // no notifier: nothing happens, nothing throws
+    });
+
+    test('refreshAll loads data and news, then notifies', () async {
+      final n = FakeNotifier();
+      SharedPreferences.setMockInitialValues({});
+      final client = MockClient((_) async => http.Response('<rss><channel><item><title>AAA báo lãi quý 3</title><link>https://x.test/1</link><description>d</description></item></channel></rss>', 200, headers: {'content-type': 'application/rss+xml; charset=utf-8'}));
+      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()), notifier: n, httpClient: client);
+      await s.refreshAll();
+      expect(s.of(Market.vn).quotes, hasLength(3));
+      expect(s.stories.single.head.title, 'AAA báo lãi quý 3');
+      expect(n.shown.map((x) => x.title), containsAll(['BBB · Mức 3', 'CCC · Mức 3']));
+    });
+
+    test('a news failure is shown as a short message and keeps the old stories', () async {
+      SharedPreferences.setMockInitialValues({});
+      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()), httpClient: MockClient((_) async => http.Response('x', 503)));
+      s.stories = [_story('Cũ')];
+      await s.loadNews();
+      expect(s.newsError, isNotNull);
+      expect(s.stories, hasLength(1));
+    });
+
+    test('the inbox lists hot headlines too', () async {
+      final s = await _state();
+      s.stories = [_story('AAA báo lãi quý 3', at: DateTime.now())];
+      await s.toggleWatch(Market.vn, 'AAA');
+      expect(s.inbox().where((i) => i.story != null), hasLength(1));
+    });
   });
 }

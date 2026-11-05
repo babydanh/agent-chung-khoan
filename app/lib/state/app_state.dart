@@ -8,6 +8,11 @@ import '../data/demo_repository.dart';
 import '../data/repository.dart';
 import '../data/supabase_repository.dart';
 import '../models/models.dart';
+import '../news/news_service.dart';
+import '../news/rank.dart';
+import '../notify/cycle.dart' as cycle;
+import '../notify/notifier.dart';
+import '../notify/planner.dart';
 
 enum SortKey { level, percent, volume, symbol }
 
@@ -35,6 +40,18 @@ class NotifyPrefs {
   final bool vn, us, digest, quiet, news; // quiet = 22:00-07:00; news = hot headlines
   final int minLevel, hot, maxPerHour;
 
+  /// Reads the stored settings; unreadable or out-of-range values fall back to the defaults.
+  factory NotifyPrefs.load(SharedPreferences p) => NotifyPrefs(
+        vn: p.getBool('n_vn') ?? true,
+        us: p.getBool('n_us') ?? true,
+        digest: p.getBool('n_dg') ?? true,
+        quiet: p.getBool('n_quiet') ?? true,
+        news: p.getBool('n_news') ?? true,
+        minLevel: (p.getInt('n_min') ?? 3).clamp(1, 3),
+        hot: (p.getInt('n_hot') ?? 60).clamp(30, 95),
+        maxPerHour: (p.getInt('n_max') ?? 6).clamp(1, 20),
+      );
+
   NotifyPrefs copyWith({bool? vn, bool? us, bool? digest, bool? quiet, bool? news, int? minLevel, int? hot, int? maxPerHour}) => NotifyPrefs(
         vn: vn ?? this.vn, us: us ?? this.us, digest: digest ?? this.digest, quiet: quiet ?? this.quiet, news: news ?? this.news,
         minLevel: minLevel ?? this.minLevel, hot: hot ?? this.hot, maxPerHour: maxPerHour ?? this.maxPerHour);
@@ -50,12 +67,16 @@ bool marketOpen(Market m, DateTime vnNow) {
 }
 
 class AppState extends ChangeNotifier {
-  AppState(this._prefs, {Repository? repository, DateTime Function()? now}) : _now = now ?? DateTime.now {
+  AppState(this._prefs, {Repository? repository, DateTime Function()? now, this.notifier, http.Client? httpClient})
+      : _now = now ?? DateTime.now,
+        _client = httpClient ?? http.Client() {
     _loadPrefs();
     _repo = repository ?? _buildRepo();
   }
 
   final SharedPreferences _prefs;
+  final http.Client _client;
+  final Notifier? notifier;
   final DateTime Function() _now;
   late Repository _repo;
 
@@ -75,6 +96,8 @@ class AppState extends ChangeNotifier {
   // --- data ---------------------------------------------------------------------------------------
   final Map<Market, MarketData> data = {};
   final Map<Market, DateTime> loadedAt = {};
+  List<Story> stories = [];
+  String? newsError;
   bool loading = false;
   bool offline = false;
   String? error;
@@ -90,13 +113,8 @@ class AppState extends ChangeNotifier {
     watch[Market.vn] = _prefs.getStringList('watch_VN') ?? [];
     watch[Market.us] = _prefs.getStringList('watch_US') ?? [];
     recentSearches = _prefs.getStringList('recent') ?? [];
-    notify = NotifyPrefs(
-      vn: _prefs.getBool('n_vn') ?? true, us: _prefs.getBool('n_us') ?? true, digest: _prefs.getBool('n_dg') ?? true,
-      quiet: _prefs.getBool('n_quiet') ?? true, minLevel: (_prefs.getInt('n_min') ?? 3).clamp(1, 3),
-      news: _prefs.getBool('n_news') ?? true, hot: (_prefs.getInt('n_hot') ?? 60).clamp(30, 95), maxPerHour: (_prefs.getInt('n_max') ?? 6).clamp(1, 20));
-    connection = SupabaseConfig(
-      url: _prefs.getString('c_url') ?? '', anonKey: _prefs.getString('c_key') ?? '',
-      email: _prefs.getString('c_mail') ?? '', password: _prefs.getString('c_pass') ?? '');
+    notify = NotifyPrefs.load(_prefs);
+    connection = SupabaseConfig.load(_prefs);
   }
 
   Repository _buildRepo() => connection.complete ? SupabaseRepository(connection) : DemoRepository(now: _now());
@@ -125,6 +143,59 @@ class AppState extends ChangeNotifier {
       loading = false;
       notifyListeners();
     }
+  }
+
+  /// Reads the public feeds from the phone. A failure keeps the stories already loaded and sets [newsError].
+  Future<void> loadNews() async {
+    try {
+      final known = {for (final q in of(Market.vn).quotes) q.symbol};
+      final r = await fetchNews(client: _client, known: known, now: now);
+      stories = clusterStories(r.items);
+      newsError = r.failed.isEmpty ? null : 'Một số nguồn tin lỗi: ${r.failed.keys.join(', ')}';
+      notifyListeners();
+    } catch (e) {
+      newsError = 'Không đọc được tin';
+      notifyListeners();
+    }
+  }
+
+  /// Data, headlines, then notifications: what the refresh gesture and the first start do.
+  Future<void> refreshAll() async {
+    await load(Market.vn);
+    await Future.wait([loadNews(), if (data.containsKey(Market.us) || market == Market.us) load(Market.us)]);
+    await notifyNow();
+  }
+
+  Set<String> get _flowSymbols => {for (final r in of(Market.vn).signals.values) if (r.level >= 2) r.symbol};
+
+  bool flowMatch(Story s) => s.head.symbols.any(_flowSymbols.contains);
+
+  int score(Story s) => hotScore(s, now.toUtc(), watch[Market.vn]!.toSet(), _flowSymbols);
+
+  bool isHot(Story s) => score(s) >= notify.hot;
+
+  /// Stories hottest first (ties keep the newest first).
+  List<Story> rankedStories() {
+    final scored = [for (var i = 0; i < stories.length; i++) (stories[i], score(stories[i]), i)];
+    scored.sort((a, b) => b.$2 != a.$2 ? b.$2.compareTo(a.$2) : a.$3.compareTo(b.$3));
+    return [for (final x in scored) x.$1];
+  }
+
+  /// Shows the notices the planner picks from the data already loaded. Returns how many were shown.
+  Future<int> notifyNow() async {
+    final n = notifier;
+    if (n == null) return 0;
+    final result = plan(now: now.toUtc(), data: data, stories: stories, watch: watch[Market.vn]!.toSet(), prefs: notify, state: cycle.loadState(_prefs));
+    final shown = await cycle.showAll(n, result);
+    await cycle.saveState(_prefs, result.state);
+    return shown;
+  }
+
+  /// Asks for the notification permission. False when it is refused or there is no notifier.
+  Future<bool> allowNotifications() async => await notifier?.requestPermission() ?? false;
+
+  Future<void> sendTestNotice() async {
+    await notifier?.show(Notice(key: 'test:${now.microsecondsSinceEpoch}', title: 'Thông báo thử', body: 'Hoạt động bình thường', score: 0, at: now.toUtc()));
   }
 
   Future<List<DailyBar>> bars(Market m, String symbol, {int days = 60}) async {
@@ -216,6 +287,11 @@ class AppState extends ChangeNotifier {
         }
       }
     }
+    if (notify.news && notify.vn) {
+      for (final st in rankedStories().where(isHot)) {
+        out.add(InboxItem(market: Market.vn, story: st, at: st.head.published));
+      }
+    }
     out.sort((a, b) => (b.at ?? DateTime(2000)).compareTo(a.at ?? DateTime(2000)));
     return out;
   }
@@ -300,10 +376,11 @@ class AppState extends ChangeNotifier {
 
 /// One line of the in-app inbox: either a symbol that reached the chosen level or a bulletin.
 class InboxItem {
-  const InboxItem({required this.market, this.symbol, this.level = 0, this.digest, this.at});
+  const InboxItem({required this.market, this.symbol, this.level = 0, this.digest, this.story, this.at});
   final Market market;
   final String? symbol;
   final int level;
   final Digest? digest;
+  final Story? story;
   final DateTime? at;
 }

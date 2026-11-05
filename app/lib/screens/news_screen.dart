@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
+import '../news/rank.dart';
 import '../state/scope.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
+import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
 import '../widgets/common.dart';
 import 'board_screen.dart';
@@ -25,8 +28,12 @@ class _NewsScreenState extends State<NewsScreen> {
     final s = AppScope.of(context);
     final c = context.c;
     final d = s.of(_m);
-    final news = [for (final n in d.news) if (_symbol == null || n.symbol == _symbol) n];
-    final symbols = {for (final n in d.news) if (n.symbol != null && n.symbol!.isNotEmpty) n.symbol!}.toList()..sort();
+    final vn = _m == Market.vn;
+    final stories = vn ? [for (final st in s.rankedStories()) if (_symbol == null || st.head.symbols.contains(_symbol)) st] : const <Story>[];
+    final news = vn && s.stories.isNotEmpty ? const <NewsItem>[] : [for (final n in d.news) if (_symbol == null || n.symbol == _symbol) n];
+    final symbols = vn && s.stories.isNotEmpty
+        ? ({for (final st in s.stories) ...st.head.symbols}.toList()..sort())
+        : ({for (final n in d.news) if (n.symbol != null && n.symbol!.isNotEmpty) n.symbol!}.toList()..sort());
     return SafeArea(
       bottom: false,
       child: Column(children: [
@@ -39,7 +46,7 @@ class _NewsScreenState extends State<NewsScreen> {
           child: RefreshIndicator(
             color: c.accent,
             backgroundColor: c.surface,
-            onRefresh: () => s.load(_m),
+            onRefresh: () => vn ? s.refreshAll() : s.load(_m),
             child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
               if (d.digests.isNotEmpty) _DigestCard(d.digests.first, onAll: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DigestHistory(market: _m)))),
               if (symbols.isNotEmpty)
@@ -50,10 +57,14 @@ class _NewsScreenState extends State<NewsScreen> {
                     for (final sym in symbols) Padding(padding: const EdgeInsets.only(right: Sp.s2), child: Pill(sym, selected: _symbol == sym, onTap: () => setState(() => _symbol = sym))),
                   ]),
                 ),
-              if (news.isEmpty)
+              if (vn && s.newsError != null)
+                Padding(padding: const EdgeInsets.fromLTRB(Sp.s4, 0, Sp.s4, Sp.s2), child: Text(s.newsError!, style: AppText.base(c.text3, size: Ts.xs))),
+              if (stories.isEmpty && news.isEmpty)
                 const SizedBox(height: 260, child: EmptyState('news', 'Chưa có tin'))
-              else
+              else ...[
+                for (final st in stories) ...[StoryTile(st, hot: s.isHot(st), flow: s.flowMatch(st)), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
                 for (final n in news) ...[NewsTile(n), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
+              ],
             ]),
           ),
         ),
@@ -147,6 +158,48 @@ class DigestDetail extends StatelessWidget {
           Text('Chỉ là thông tin, không phải khuyến nghị đầu tư.', style: AppText.base(c.text3, size: Ts.xs)),
         ])),
       ])),
+    );
+  }
+}
+
+
+/// A ranked story: title, event, symbols, source and time, with "Nóng" and "Khớp" flags.
+class StoryTile extends StatelessWidget {
+  const StoryTile(this.story, {super.key, required this.hot, required this.flow});
+  final Story story;
+  final bool hot, flow;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final h = story.head;
+    final vnTime = h.published?.toUtc().add(const Duration(hours: 7));
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: () async {
+          final uri = Uri.tryParse(h.link);
+          if (uri != null && uri.scheme == 'https') await launchUrl(uri, mode: LaunchMode.externalApplication);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Sp.s4, vertical: Sp.s3),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              if (hot) Tag('Nóng', icon: 'zap', color: c.levels[3]),
+              if (flow) Tag('Khớp', icon: 'swap', color: c.accent),
+              Tag(story.event.label),
+              for (final sym in h.symbols.take(3)) Tag(sym),
+            ]),
+            const SizedBox(height: 6),
+            Text(h.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppText.base(c.text, weight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Row(children: [
+              Expanded(child: Text('${story.sources > 1 ? '${story.sources} nguồn · ' : ''}${h.source} · ${f.hhmm(vnTime)}', style: AppText.num(c.text2, size: Ts.xs, weight: FontWeight.w400))),
+              AppIcon('ext', size: 16, color: c.text3),
+            ]),
+          ]),
+        ),
+      ),
     );
   }
 }

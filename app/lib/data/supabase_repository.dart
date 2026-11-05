@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
 import 'repository.dart';
@@ -8,6 +9,14 @@ import 'repository.dart';
 class SupabaseConfig {
   const SupabaseConfig({required this.url, required this.anonKey, required this.email, required this.password});
   final String url, anonKey, email, password;
+
+  /// The connection saved on this device (the same keys the settings screen writes).
+  factory SupabaseConfig.load(SharedPreferences p) => SupabaseConfig(
+        url: p.getString('c_url') ?? '',
+        anonKey: p.getString('c_key') ?? '',
+        email: p.getString('c_mail') ?? '',
+        password: p.getString('c_pass') ?? '',
+      );
 
   bool get complete => url.isNotEmpty && anonKey.isNotEmpty && email.isNotEmpty && password.isNotEmpty;
 }

@@ -53,7 +53,7 @@ class _ShellState extends State<Shell> {
       _started = true;
       final s = AppScope.read(context);
       // Not during build: load() notifies listeners straight away.
-      WidgetsBinding.instance.addPostFrameCallback((_) => s.load());
+      WidgetsBinding.instance.addPostFrameCallback((_) => s.refreshAll());
     }
   }
 

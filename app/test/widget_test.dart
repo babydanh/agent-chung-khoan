@@ -3,12 +3,20 @@ import 'package:agent_ck/data/demo_repository.dart';
 import 'package:agent_ck/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<AppState> _app(WidgetTester tester) async {
-  SharedPreferences.setMockInitialValues({});
+const _feed = '<rss><channel><item><title>VNM báo lãi quý 3 tăng 20% so với cùng kỳ</title><link>https://example.com/a</link>'
+    '<pubDate>Thu, 05 Nov 2026 02:50:00 GMT</pubDate><description>d</description></item></channel></rss>';
+
+/// No test reaches the network: every feed request gets this one headline.
+final _web = MockClient((_) async => http.Response(_feed, 200, headers: {'content-type': 'application/rss+xml; charset=utf-8'}));
+
+Future<AppState> _app(WidgetTester tester, {Map<String, Object> stored = const {}}) async {
+  SharedPreferences.setMockInitialValues(stored);
   final prefs = await SharedPreferences.getInstance();
-  final state = AppState(prefs, repository: DemoRepository(now: DateTime(2026, 11, 5, 9, 41)), now: () => DateTime(2026, 11, 5, 9, 41));
+  final state = AppState(prefs, repository: DemoRepository(now: DateTime(2026, 11, 5, 9, 41)), now: () => DateTime.utc(2026, 11, 5, 3, 0), httpClient: _web);
   tester.view.physicalSize = const Size(390 * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -60,5 +68,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('VNM'), findsOneWidget);
     expect(find.text('VCB'), findsNothing);
+  });
+
+  testWidgets('the news tab shows the ranked headline with its event, a hot flag and a money-flow match', (tester) async {
+    await _app(tester, stored: {'watch_VN': ['VNM']});
+    await tester.tap(find.text('Tin').last);
+    await tester.pumpAndSettle();
+    expect(find.text('VNM báo lãi quý 3 tăng 20% so với cùng kỳ'), findsOneWidget);
+    expect(find.text('Kết quả kinh doanh'), findsOneWidget);
+    expect(find.text('Nóng'), findsOneWidget);
+    expect(find.text('Khớp'), findsOneWidget, reason: 'VNM is level 3 in the demo data');
+  });
+
+  testWidgets('the notification settings offer the permission and a test message', (tester) async {
+    await _app(tester);
+    await tester.tap(find.text('Cài đặt').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hộp thư và lọc'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tin nóng'), findsOneWidget);
+    expect(find.text('Cho phép thông báo'), findsOneWidget);
+    expect(find.text('Gửi thử'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

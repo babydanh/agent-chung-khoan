@@ -115,7 +115,7 @@ class BoardScreen extends StatelessWidget {
           child: RefreshIndicator(
             color: c.accent,
             backgroundColor: c.surface,
-            onRefresh: () => s.load(m),
+            onRefresh: () => s.refreshAll(),
             child: s.loading && empty
                 ? const SingleChildScrollView(physics: AlwaysScrollableScrollPhysics(), child: SkeletonRows())
                 : rows.isEmpty
