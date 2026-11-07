@@ -2,8 +2,8 @@
 news it used in `news`, and record the push decision in the heartbeat. Nothing is sent from here (see pipeline.push).
 
 Usage: python3 -m pipeline.bulletin --market VN|US
-Secrets from the environment: SUPABASE_URL, SUPABASE_SECRET_KEY, ANTHROPIC_API_KEY (a missing model key makes the
-run fail after storing the code-built fallback bulletin).
+Secrets from the environment: SUPABASE_URL, SUPABASE_SECRET_KEY, ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (the
+API key wins; with neither, the run fails after storing the code-built fallback bulletin).
 """
 import argparse
 import logging
@@ -60,7 +60,8 @@ def main(argv, env, now=None, get_text=None, make=agent.make_bulletin, sleep=Non
         items = _latest_items(db, market, now)
         headlines = _news(market, known, get_text, now)
         published = {n["id"]: n["published"] for n in headlines}  # the agent's news list does not carry the time
-        bulletin = make(items, headlines, env.get("ANTHROPIC_API_KEY"), f"{local:%H:%M}")
+        bulletin = make(items, headlines, env.get("ANTHROPIC_API_KEY"), f"{local:%H:%M}",
+                        cli_token=env.get("CLAUDE_CODE_OAUTH_TOKEN"))
         db.upsert("digests", [{"market": market, "digest_date": local.date().isoformat(), "kind": f"slot-{local:%H%M}",
                                "body": "\n".join(bulletin["paragraphs"])}],
                   "market,digest_date,kind", merge=False)  # a rerun keeps the first bulletin of the slot

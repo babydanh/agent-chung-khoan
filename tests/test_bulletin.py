@@ -12,7 +12,8 @@ ITEMS = [{"signals": [{"id": "S1", "dir": None}]}]
 
 
 def fake_make(items, news, api_key, time_text, **kw):
-    fake_make.calls.append({"items": items, "news": news, "key": api_key, "time": time_text})
+    fake_make.calls.append({"items": items, "news": news, "key": api_key, "time": time_text,
+                            "cli_token": kw.get("cli_token")})
     return {"source": "ai", "reason": None, "fatal": False, "paragraphs": ["Dòng một.", "Dòng hai."],
             "news": [{k: n[k] for k in ("id", "title", "link", "source")} for n in news[:1]],  # same shape as the real agent
             "dropped": []}
@@ -63,6 +64,10 @@ class BulletinTest(unittest.TestCase):
         self.assertEqual(call["items"], [{"symbol": "HPG", "level": 2, "signals": [{"id": "S1", "dir": None}]}])
         self.assertEqual(call["time"], "15:05")
         self.assertEqual(call["key"], "a")
+
+    def test_cli_token_from_the_environment_is_passed_to_the_agent(self):  # TC-BULLETIN-CLI-11
+        run(self.rows, env={"CLAUDE_CODE_OAUTH_TOKEN": "tok"})
+        self.assertEqual(fake_make.calls[0]["cli_token"], "tok")
 
     def test_news_used_by_the_bulletin_is_stored_with_the_market(self):
         _, reqs = run(self.rows)
