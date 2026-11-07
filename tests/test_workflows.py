@@ -78,6 +78,24 @@ class BotSwitchTest(unittest.TestCase):
             self.assertNotIn("BOT_ENABLED", read(n), n)
 
 
+class CliTokenTest(unittest.TestCase):
+    """TC-BULLETIN-CLI-09/10: the subscription token reaches only the bulletin step, with a pinned CLI installed first."""
+
+    def test_the_cli_token_is_only_given_to_the_bulletin_step(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            t = read(n)
+            self.assertEqual(t.count("secrets.CLAUDE_CODE_OAUTH_TOKEN"), 1, n)
+            i = t.index("- name: Write bulletin")
+            self.assertIn("CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+                          t[i:t.index("- name: Alert on failure")], n)
+
+    def test_a_pinned_cli_is_installed_before_the_bulletin_step(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            t = read(n)
+            self.assertRegex(t, r"npm install -g @anthropic-ai/claude-code@\d+\.\d+\.\d+\n", n)  # no floating version
+            self.assertLess(t.index("@anthropic-ai/claude-code@"), t.index("- name: Write bulletin"), n)
+
+
 class FailureAlertTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
 

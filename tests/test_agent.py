@@ -1,5 +1,7 @@
 import json
+import subprocess
 import unittest
+from unittest import mock
 
 from pipeline.agent import MODEL, SCHEMA, build_table, fallback_bulletin, make_bulletin, request_body
 from pipeline.banned import find_banned
@@ -111,6 +113,78 @@ class MakeBulletinTest(unittest.TestCase):
         out, reqs = go(lambda *a: reply([]), items=[])
         self.assertEqual((out["source"], reqs), ("fallback", []))
         self.assertEqual(len(out["paragraphs"]), 1)
+
+
+def cli_out(payload, is_error=False):
+    return subprocess.CompletedProcess(["claude"], 0, json.dumps({"type": "result", "is_error": is_error, **payload}), "")
+
+
+GOOD = [{"text": "Có {COUNT} mã lúc {TIME}.", "news_ids": []}]
+
+
+def go_cli(fake, key="", token="oauth-secret"):
+    with mock.patch("pipeline.agent.subprocess.run", side_effect=fake) as run:
+        out = make_bulletin(ITEMS, NEWS, key, "09:50", cli_token=token, sleep=lambda x: None)
+    return out, run
+
+
+class CliBulletinTest(unittest.TestCase):
+    """TC-BULLETIN-CLI: with no API key, the unmodified `claude` CLI writes the bulletin from CLAUDE_CODE_OAUTH_TOKEN."""
+
+    def test_cli_01_token_without_key_runs_the_cli_and_returns_an_ai_bulletin(self):
+        out, run = go_cli(lambda *a, **k: cli_out({"structured_output": {"paragraphs": GOOD}}))
+        self.assertEqual((out["source"], out["fatal"]), ("ai", False))
+        self.assertEqual(out["paragraphs"], ["Có 3 mã lúc 09:50."])
+        (args,), kw = run.call_args
+        self.assertEqual(args[:2], ["claude", "-p"])
+        self.assertIn("--no-session-persistence", args)
+        self.assertEqual(args[args.index("--tools") + 1], "")  # the model gets no tools
+        self.assertIn("HPG", kw["input"])
+
+    def test_cli_02_the_token_goes_in_the_environment_and_an_empty_api_key_is_dropped(self):
+        with mock.patch.dict("os.environ", {"ANTHROPIC_API_KEY": ""}):
+            _, run = go_cli(lambda *a, **k: cli_out({"structured_output": {"paragraphs": GOOD}}))
+        env = run.call_args.kwargs["env"]
+        self.assertEqual(env["CLAUDE_CODE_OAUTH_TOKEN"], "oauth-secret")
+        self.assertNotIn("ANTHROPIC_API_KEY", env)
+        self.assertNotIn("oauth-secret", run.call_args.args[0])  # never on the command line
+
+    def test_cli_03_an_api_key_wins_and_the_cli_is_not_started(self):
+        with mock.patch("pipeline.agent.subprocess.run") as run, FakeServer(lambda *a: reply(GOOD)) as s:
+            out = make_bulletin(ITEMS, NEWS, "test-key", "09:50", url=s.url + "/v1/messages", cli_token="t",
+                                sleep=lambda x: None)
+        self.assertEqual(out["source"], "ai")
+        run.assert_not_called()
+
+    def test_cli_04_a_text_result_is_parsed_when_there_is_no_structured_output(self):
+        out, _ = go_cli(lambda *a, **k: cli_out({"result": json.dumps({"paragraphs": GOOD})}))
+        self.assertEqual(out["source"], "ai")
+
+    def test_cli_05_not_logged_in_turns_the_run_red_without_leaking_the_token(self):
+        out, _ = go_cli(lambda *a, **k: cli_out({"result": "Not logged in · Please run /login"}, is_error=True))
+        self.assertEqual((out["source"], out["fatal"]), ("fallback", True))
+        self.assertTrue(out["reason"].startswith("config_error:401"))
+        self.assertNotIn("oauth-secret", out["reason"])
+
+    def test_cli_06_a_timeout_or_missing_binary_is_a_quiet_fallback(self):
+        for exc in (subprocess.TimeoutExpired("claude", 1), FileNotFoundError("claude")):
+            def boom(*a, **k):
+                raise exc
+            out, _ = go_cli(boom)
+            self.assertEqual((out["source"], out["fatal"]), ("fallback", False), exc)
+
+    def test_cli_07_garbage_output_is_a_quiet_fallback(self):
+        for bad in (subprocess.CompletedProcess(["claude"], 1, "", "boom"),
+                    subprocess.CompletedProcess(["claude"], 0, "not json", ""),
+                    cli_out({"result": "not json either"}),
+                    cli_out({"structured_output": {"nope": 1}})):
+            out, _ = go_cli(lambda *a, **k: bad)
+            self.assertEqual((out["source"], out["fatal"]), ("fallback", False), bad.stdout)
+
+    def test_cli_08_no_key_and_no_token_is_still_fatal(self):
+        out, run = go_cli(lambda *a, **k: None, token="")
+        self.assertEqual((out["reason"], out["fatal"]), ("no_key", True))
+        run.assert_not_called()
 
 
 class NewsFilterTest(unittest.TestCase):
