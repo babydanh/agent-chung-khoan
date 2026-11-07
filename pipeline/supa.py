@@ -17,7 +17,8 @@ def from_env(env):
 class Supabase:
     def __init__(self, url, key, sleep=None):
         self.base = url.rstrip("/") + "/rest/v1"
-        self.headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+        # Not the browser User-Agent of request_json: Supabase answers 401 to a secret key sent with one.
+        self.headers = {"apikey": key, "Authorization": f"Bearer {key}", "User-Agent": "agent-chung-khoan-bot"}
         self.sleep = sleep
 
     def _call(self, path, payload=None, method=None, prefer=None):
