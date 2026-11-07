@@ -28,6 +28,12 @@ class FromEnvTest(unittest.TestCase):
 
 
 class ClientTest(unittest.TestCase):
+    def test_supa_01_requests_do_not_look_like_a_browser(self):  # Supabase answers 401 to a secret key sent with a browser User-Agent
+        with FakeServer(lambda *a: (200, [])) as s:
+            Supabase(s.url, "KEY", sleep=NO_SLEEP).select("quotes_latest")
+            ua = s.requests[0]["headers"]["user-agent"]
+        self.assertNotIn("Mozilla", ua)
+
     def test_select_sends_filters_and_key_headers(self):
         with FakeServer(lambda *a: (200, [{"symbol": "FPT"}])) as s:
             rows = Supabase(s.url, "KEY", sleep=NO_SLEEP).select("quotes_latest", {"select": "symbol", "symbol": "eq.FPT"})
