@@ -2,7 +2,7 @@ import re
 import unittest
 from pathlib import Path
 
-WF = Path(__file__).resolve().parent.parent / "ci-pending" / "workflows"
+WF = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 VN_TIMES = ["9:20", "9:50", "10:20", "10:50", "11:20", "11:40", "13:20", "13:50", "14:20", "14:50", "15:05"]
 US_TIMES = [f"{h}:{m:02d}" for h in range(10, 16) for m in (5, 35)] + ["16:20", "16:50"]
 
@@ -52,6 +52,48 @@ class BulletinStepTest(unittest.TestCase):
     def test_the_model_key_is_only_given_to_the_bulletin_step(self):
         for n in ("snap-vn.yml", "snap-us.yml"):
             self.assertEqual(read(n).count("secrets.ANTHROPIC_API_KEY"), 1, n)
+
+
+class BotSwitchTest(unittest.TestCase):
+    """The scheduled jobs only run once the owner sets the repository variable BOT_ENABLED to true, so a fresh
+    checkout without secrets does not fail every half hour."""
+    GUARD = "if: ${{ vars.BOT_ENABLED == 'true' }}"
+
+    def jobs(self, text):
+        i = text.index("\njobs:\n")
+        return re.split(r"\n  (?=[a-z][\w-]*:\n)", text[i + len("\njobs:\n"):])
+
+    def test_every_scheduled_job_is_behind_the_switch(self):
+        for n in ("snap-vn.yml", "snap-us.yml", "eod.yml"):
+            for job in self.jobs(read(n)):
+                head = job.split("steps:")[0]
+                self.assertIn(self.GUARD, head, f"{n}: {job.splitlines()[0]}")
+
+    def test_the_switch_is_a_variable_not_a_secret(self):
+        for n in ("snap-vn.yml", "snap-us.yml", "eod.yml"):
+            self.assertNotIn("secrets.BOT_ENABLED", read(n), n)
+
+    def test_tests_and_the_app_build_do_not_need_the_switch(self):
+        for n in ("ci.yml", "app.yml"):
+            self.assertNotIn("BOT_ENABLED", read(n), n)
+
+
+class CliTokenTest(unittest.TestCase):
+    """TC-BULLETIN-CLI-09/10: the subscription token reaches only the bulletin step, with a pinned CLI installed first."""
+
+    def test_the_cli_token_is_only_given_to_the_bulletin_step(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            t = read(n)
+            self.assertEqual(t.count("secrets.CLAUDE_CODE_OAUTH_TOKEN"), 1, n)
+            i = t.index("- name: Write bulletin")
+            self.assertIn("CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+                          t[i:t.index("- name: Alert on failure")], n)
+
+    def test_a_pinned_cli_is_installed_before_the_bulletin_step(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            t = read(n)
+            self.assertRegex(t, r"npm install -g @anthropic-ai/claude-code@\d+\.\d+\.\d+\n", n)  # no floating version
+            self.assertLess(t.index("@anthropic-ai/claude-code@"), t.index("- name: Write bulletin"), n)
 
 
 class FailureAlertTest(unittest.TestCase):

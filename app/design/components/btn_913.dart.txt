@@ -1,0 +1,28 @@
+Container(
+  width: 358,
+  height: 48,
+  decoration: BoxDecoration(
+    color: Color(0xFF2DD4BF),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 127.27,
+        top: 14.5,
+        child: Text(
+          "Áp dụng · 5",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: "Inter",
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF052420),
+          ),
+        )
+      ),
+    ],
+  ),
+)

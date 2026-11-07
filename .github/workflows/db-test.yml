@@ -1,0 +1,46 @@
+name: db-test
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/db-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rls:
+    name: RLS on local Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@b60b5899c73b63a2d2d651b1e90db8d4c9392f51 # v1.6.0
+        with:
+          version: 2.122.0
+      - name: Start local stack (no secrets, throwaway keys)
+        run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,postgres-meta
+      - name: Apply migrations
+        run: supabase db reset
+      - name: Run rls.sql
+        env:
+          DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres  # local CLI default, not a secret
+        run: |
+          set -o pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql | tee rls.out
+          grep -q 'RLS OK' rls.out
+
+  mutation:
+    name: RLS mutation check (plain Postgres)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Every broken policy must turn rls.sql red
+        run: supabase/tests/mutate.sh

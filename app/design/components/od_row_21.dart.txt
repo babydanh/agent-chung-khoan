@@ -1,0 +1,150 @@
+Container(
+  width: 409.63,
+  height: 44,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 11,
+              top: 11,
+              child: Container(
+                width: 22,
+                height: 22,
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 357.63,
+        height: 38,
+        padding: EdgeInsets.fromLTRB(8, 2, 8, 0),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 76.31,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF2DD4BF),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "Tất cả",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF052420),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 86.55,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "Mức 2+",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AAB3),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 74.81,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "Mức 3",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AAB3),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 95.95,
+              height: 36,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "Theo dõi",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AAB3),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

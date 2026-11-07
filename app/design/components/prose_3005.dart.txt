@@ -1,0 +1,418 @@
+Container(
+  width: 390,
+  height: 281.58,
+  padding: EdgeInsets.fromLTRB(16, 8, 0, 0),
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 12,
+    children: [
+      Container(
+        width: 358,
+        height: 57.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 4,
+              child: Text(
+                "Dòng tiền tập trung ở",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+            Positioned(
+              left: 177.86,
+              top: 1.91,
+              child: Container(
+                width: 45.38,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "FPT",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 223.23,
+              top: 4,
+              child: Text(
+                "và",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+            Positioned(
+              left: 252.69,
+              top: 1.91,
+              child: Container(
+                width: 52.48,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "VNM",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 0,
+              top: 4,
+              child: Text(
+                ": KL tăng đột biến, NN ròng dương.",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 358,
+        height: 57.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1.91,
+              child: Container(
+                width: 49.47,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "HPG",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 49.47,
+              top: 4,
+              child: Text(
+                "và",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+            Positioned(
+              left: 78.92,
+              top: 1.91,
+              child: Container(
+                width: 42.33,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "VIC",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 0,
+              top: 4,
+              child: Text(
+                "có NN ròng âm, KL cao hơn nền.",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 358,
+        height: 57.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1.91,
+              child: Container(
+                width: 40.75,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "SSI",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 40.75,
+              top: 4,
+              child: Text(
+                "ở giá trần, thoả thuận lớn ghi nhận ở",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+            Positioned(
+              left: 0,
+              top: 30.7,
+              child: Container(
+                width: 45.38,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "FPT",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 45.38,
+              top: 32.8,
+              child: Text(
+                "và",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+            Positioned(
+              left: 74.83,
+              top: 30.7,
+              child: Container(
+                width: 40.75,
+                height: 25.19,
+                padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF1F252A),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.topLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      "SSI",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2DD4BF),
+                        height: 1.8,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            ),
+            Positioned(
+              left: 115.58,
+              top: 32.8,
+              child: Text(
+                ".",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.8,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 358,
+        height: 28.8,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 47.78,
+              height: 25.19,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "VCB",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2DD4BF),
+                      height: 1.8,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              "đứng ở giá tham chiếu.",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFE9EDF0),
+                height: 1.8,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

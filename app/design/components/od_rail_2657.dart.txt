@@ -1,0 +1,417 @@
+Container(
+  width: 380,
+  height: 44,
+  padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 8,
+    children: [
+      Container(
+        width: 76.31,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF2DD4BF),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "Tất cả",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF052420),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 64.48,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "VNM",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 57.38,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "FPT",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 52.75,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "SSI",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 61.47,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "HPG",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 54.33,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "VIC",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.78,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "VCB",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 68.88,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "MWG",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.78,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "ACB",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 58.5,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "TCB",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 64.48,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "VHM",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.89,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "SHS",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.19,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "PVS",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.55,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "BSR",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 59.95,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "ACV",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFA0AAB3),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

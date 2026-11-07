@@ -1,0 +1,136 @@
+Container(
+  width: 390,
+  height: 45,
+  padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        width: 107.44,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 12,
+              top: 13.2,
+              child: Text(
+                "Tổng quan",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 101.06,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 12,
+              top: 13.2,
+              child: Text(
+                "Dòng tiền",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 79.17,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 12,
+              top: 13.2,
+              child: Text(
+                "Lịch sử",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 64.3,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 12,
+              top: 13.2,
+              child: Text(
+                "Vùng",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 48.33,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 12,
+              top: 13.2,
+              child: Text(
+                "Tin",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFA0AAB3),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

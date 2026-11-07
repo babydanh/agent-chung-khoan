@@ -1,0 +1,47 @@
+Container(
+  width: 380,
+  height: 35.59,
+  padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 8,
+    children: [
+      Text(
+        "31/10",
+        style: TextStyle(
+          fontFamily: "Inter",
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFFE9EDF0),
+          height: 1.4,
+        ),
+      ),
+      Container(
+        width: 44.08,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "31/10",
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF7F8A94),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

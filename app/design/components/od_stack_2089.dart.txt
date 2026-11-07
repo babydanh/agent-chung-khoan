@@ -1,0 +1,95 @@
+Container(
+  width: 358,
+  height: 35,
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 8,
+    children: [
+      Container(
+        width: 358,
+        height: 19,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 250.47,
+              height: 19,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Text(
+                      "Tiến trình",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 99.53,
+              height: 19,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Text(
+                      "14/20 ngày",
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE9EDF0),
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 358,
+        height: 8,
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Container(
+                width: 250.59,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Color(0xFF2DD4BF),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

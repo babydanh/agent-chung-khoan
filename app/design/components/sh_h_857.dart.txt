@@ -1,0 +1,95 @@
+Container(
+  width: 358,
+  height: 44,
+  alignment: Alignment.topLeft,
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        width: 38.34,
+        height: 24,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Text(
+                "Lọc",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE9EDF0),
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 137.19,
+        height: 44,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 85.19,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Color(0xFF171B1F),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Color(0xFF262D33), width: 1),
+              ),
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 13,
+                    top: 8.5,
+                    child: Text(
+                      "Đặt lại",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9EDF0),
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 11,
+                    top: 11,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

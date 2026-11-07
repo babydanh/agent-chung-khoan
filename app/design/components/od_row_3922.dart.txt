@@ -1,0 +1,61 @@
+Container(
+  width: 334,
+  height: 24,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 12,
+    children: [
+      Container(
+        width: 22.56,
+        height: 19.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "VN",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.4,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 40.31,
+        height: 24,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 4,
+          children: [
+            Text(
+              "Mới",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

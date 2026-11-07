@@ -1,0 +1,74 @@
+Container(
+  width: 390,
+  height: 60,
+  decoration: BoxDecoration(
+    color: Color(0xFF0F1214),
+  ),
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 0,
+        top: 4,
+        child: Container(
+          width: 390,
+          height: 48,
+          padding: EdgeInsets.fromLTRB(16, 0, 8, 0),
+          alignment: Alignment.topLeft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 8,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 10,
+                      top: 10,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                      )
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 314,
+                height: 25.19,
+                alignment: Alignment.topLeft,
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 2,
+                      child: Text(
+                        "Ngưỡng",
+                        style: TextStyle(
+                          fontFamily: "Inter",
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE9EDF0),
+                          height: 1.4,
+                        ),
+                      )
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

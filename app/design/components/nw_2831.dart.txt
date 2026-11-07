@@ -1,0 +1,125 @@
+Container(
+  width: 380,
+  height: 76.59,
+  padding: EdgeInsets.fromLTRB(16, 12, 0, 0),
+  alignment: Alignment.topLeft,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    spacing: 6,
+    children: [
+      Container(
+        width: 348,
+        height: 21.59,
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 0,
+              top: 1,
+              child: Text(
+                "Hoà Phát đưa lò cao mới vào vận hành",
+                style: TextStyle(
+                  fontFamily: "Inter",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE9EDF0),
+                  height: 1.35,
+                ),
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 348,
+        height: 24,
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 8,
+          children: [
+            Container(
+              width: 44.69,
+              height: 24,
+              padding: EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+              decoration: BoxDecoration(
+                color: Color(0xFF1F252A),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              alignment: Alignment.topLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(
+                    "HPG",
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2DD4BF),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 230.72,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "CafeF",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 34.59,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "05:30",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 14,
+              height: 14,
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

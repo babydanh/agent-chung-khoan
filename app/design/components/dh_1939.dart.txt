@@ -1,0 +1,98 @@
+Container(
+  width: 390,
+  height: 52.8,
+  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 4,
+    children: [
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.topLeft,
+        child: Stack(
+          alignment: Alignment.topLeft,
+          children: [
+            Positioned(
+              left: 10,
+              top: 10,
+              child: Container(
+                width: 24,
+                height: 24,
+              )
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 278,
+        height: 44.8,
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 278,
+              height: 28,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 2,
+                    child: Text(
+                      "ACB",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE9EDF0),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 278,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "HOSE",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFFA0AAB3),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    ],
+  ),
+)

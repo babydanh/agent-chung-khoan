@@ -1,0 +1,227 @@
+Container(
+  width: 348,
+  height: 124,
+  alignment: Alignment.topLeft,
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    spacing: 8,
+    children: [
+      Container(
+        width: 224.14,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 6,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+            ),
+            Text(
+              "KL tăng đột biến",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+            Container(
+              width: 16,
+              height: 21.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 17,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "S1",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF7F8A94),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 157.83,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 6,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+            ),
+            Text(
+              "NN ròng",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+            Container(
+              width: 16,
+              height: 21.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 17,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "S2",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF7F8A94),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 211.77,
+        height: 36,
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Color(0xFF1F252A),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        alignment: Alignment.topLeft,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 6,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+            ),
+            Text(
+              "Thoả thuận lớn",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFE9EDF0),
+                height: 1.4,
+              ),
+            ),
+            Container(
+              width: 16,
+              height: 21.59,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                    )
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 17,
+              height: 16.8,
+              alignment: Alignment.topLeft,
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    top: 1,
+                    child: Text(
+                      "S3",
+                      style: TextStyle(
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF7F8A94),
+                        height: 1.4,
+                      ),
+                    )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+)

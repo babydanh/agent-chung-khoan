@@ -1,0 +1,39 @@
+Container(
+  width: 34.59,
+  height: 16.8,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 0,
+        top: 0,
+        child: Container(
+          width: 34.59,
+          height: 16.8,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 0,
+                top: 1,
+                child: Text(
+                  "15:15",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFA0AAB3),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

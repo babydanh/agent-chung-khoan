@@ -1,0 +1,146 @@
+Container(
+  width: 380,
+  height: 64,
+  alignment: Alignment.topLeft,
+  child: Stack(
+    alignment: Alignment.topLeft,
+    children: [
+      Positioned(
+        left: 16,
+        top: 9.95,
+        child: Container(
+          width: 64,
+          height: 22.39,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 0,
+                top: 1,
+                child: Text(
+                  "SSI",
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFE9EDF0),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 16,
+        top: 36.25,
+        child: Container(
+          width: 64,
+          height: 16.8,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 29.64,
+                top: 1,
+                child: Text(
+                  "36,15",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFFB980FF),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 92,
+        top: 25.5,
+        child: Container(
+          width: 184,
+          height: 12,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 4,
+                top: 0,
+                child: Container(
+                  width: 176,
+                  height: 12,
+                  padding: EdgeInsets.fromLTRB(40.13, 0, 0, 0),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1F252A),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  alignment: Alignment.topLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 53.61,
+                    children: [
+                      Container(
+                        width: 66.88,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Color(0x382DD4BF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFE9EDF0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+      Positioned(
+        left: 288,
+        top: 11.34,
+        child: Container(
+          width: 76,
+          height: 19.59,
+          alignment: Alignment.topLeft,
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned(
+                left: 26.97,
+                top: 1,
+                child: Text(
+                  "KL lớn",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontFamily: "Inter",
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE9EDF0),
+                    height: 1.4,
+                  ),
+                )
+              ),
+            ],
+          ),
+        )
+      ),
+    ],
+  ),
+)

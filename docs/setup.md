@@ -11,8 +11,8 @@ Code đã đủ để chạy; còn lại là các bước cần quyền của ch
 6. Lấy `Project URL` và **secret key** (không phải publishable/anon key) cho bot.
 
 ## 2. GitHub (repo bot)
-1. Chép `ci-pending/workflows/*.yml` sang `.github/workflows/` (token của máy cloud không có quyền `workflow`). `db-test.yml` cũng chép nếu muốn CI cho SQL.
-2. Secrets của repo: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY` (Alpaca, thị trường Mỹ), `ANTHROPIC_API_KEY` (bản tin), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (báo lỗi).
+1. Các workflow đã nằm sẵn ở `.github/workflows/`. Workflow chạy theo lịch (`snap-vn`, `snap-us`, `eod`) chỉ chạy khi repo có biến **BOT_ENABLED = true** (Settings → Secrets and variables → Actions → tab Variables → New repository variable). Đặt biến này SAU khi đã đặt các secret bên dưới.
+2. Secrets của repo: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY` (Alpaca, thị trường Mỹ), `ANTHROPIC_API_KEY` (bản tin; hoặc thay bằng `CLAUDE_CODE_OAUTH_TOKEN` lấy từ `claude setup-token`, bản tin sẽ chạy qua lệnh `claude` gốc. Có cả hai thì dùng API key. Rủi ro điều khoản gói: xem https://code.claude.com/docs/en/legal-and-compliance), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (báo lỗi).
 3. Chạy tay `snap-vn` bằng `workflow_dispatch` trong giờ chạy (9:00–15:40 giờ VN) rồi xem `snapshot_meta`, `quotes_latest`, `heartbeat` có dòng chưa. Lịch tự chạy bật ngay khi workflow có trên nhánh mặc định.
 4. Job `rls` của `db-test.yml` trên GitHub chưa từng chạy: xem kết quả lần đầu.
 
