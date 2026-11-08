@@ -25,6 +25,15 @@ NOTES_SEEN_AGE = timedelta(days=4)  # a headline noted within this window is not
 WEEKEND_SIGNAL_AGE = timedelta(days=5)  # the weekend bulletin reports the last session, however long ago it closed
 
 
+QUIET_START, QUIET_END = 1, 5  # Vietnam hours: no model bulletin from 01:00 up to 05:00, nor on Saturday and Sunday
+
+
+def model_quiet(local):
+    """True in the hours the bot does not ask the model (saves tokens). Only the model step is skipped: the snapshot job
+    has already run, so prices, signals and the end-of-day check are whole."""
+    return local.weekday() >= 5 or QUIET_START <= local.hour < QUIET_END
+
+
 def _latest_items(db, market, now, max_age=MAX_SIGNAL_AGE):
     last = db.select("signals", {"market": "eq." + market, "select": "asof", "order": "asof.desc", "limit": 1})
     if not last or now - datetime.fromisoformat(last[0]["asof"]) > max_age:
@@ -79,6 +88,9 @@ def main(argv, env, now=None, get_text=None, make=agent.make_bulletin, annotate=
     now = now or datetime.now(timezone.utc)
     if args.weekend and market != "VN":  # the feeds are Vietnamese: a US weekend bulletin would have nothing to say
         log.info("no weekend bulletin for %s", market)
+        return 0
+    if not args.weekend and model_quiet(now.astimezone(push.VN)):  # the weekend bulletin is built by code: no model, no cost
+        log.info("quiet hours (01:00-05:00 or Saturday/Sunday, Vietnam time): no bulletin this run")
         return 0
     try:
         db = from_env(env)
