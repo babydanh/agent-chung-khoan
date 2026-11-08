@@ -11,11 +11,12 @@ class SupabaseConfig {
   final String url, anonKey, email, password;
 
   /// Baked in at build time with --dart-define (see the apk job in app.yml); empty in a plain build.
+  /// The password is never baked in: it is the PIN the user types on first start.
   static const builtIn = SupabaseConfig(
     url: String.fromEnvironment('SUPABASE_URL'),
     anonKey: String.fromEnvironment('SUPABASE_ANON_KEY'),
     email: String.fromEnvironment('SUPABASE_EMAIL'),
-    password: String.fromEnvironment('SUPABASE_PASSWORD'),
+    password: '',
   );
 
   /// The connection saved on this device (the same keys the settings screen writes). A value never saved falls back

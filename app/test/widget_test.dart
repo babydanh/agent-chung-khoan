@@ -62,6 +62,12 @@ void main() {
     }
   });
 
+  testWidgets('TC-PIN-06: a device with a login but no password opens on the PIN screen, not the board', (tester) async {
+    await _app(tester, stored: {'c_url': 'http://127.0.0.1:1', 'c_key': 'pk', 'c_mail': 'reader@x.test'});
+    expect(find.text('Nhập mã PIN'), findsOneWidget);
+    expect(find.text('Bảng'), findsNothing);
+  });
+
   testWidgets('the level-3 chip hides everything below level 3', (tester) async {
     await _app(tester);
     await tester.tap(find.text('Mức 3'));

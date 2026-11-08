@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/board_screen.dart';
 import 'screens/news_screen.dart';
+import 'screens/pin_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/watch_screen.dart';
 import 'screens/zone_screen.dart';
@@ -26,7 +27,7 @@ class AgentCkApp extends StatelessWidget {
           theme: buildTheme(Brightness.light),
           darkTheme: buildTheme(Brightness.dark),
           themeMode: state.themeMode,
-          home: const Shell(),
+          home: state.needsPin ? const PinScreen() : const Shell(),
         ),
       ),
     );

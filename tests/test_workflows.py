@@ -97,22 +97,27 @@ class CliTokenTest(unittest.TestCase):
 
 
 class AppBuiltInConnectionTest(unittest.TestCase):
-    """TC-APP-PRELOAD: the APK is built with the connection inside (--dart-define); the login secret reaches only that step."""
+    """TC-APP-PRELOAD: the APK is built with URL, public key and email inside (--dart-define); the password is a PIN
+    typed on the phone and never baked into the APK (the repository and its artifacts are public)."""
 
     def step(self):
         t = read("app.yml")
         i = t.index("- name: \"Build APK")
         return t[i:t.index("- uses: actions/upload-artifact")]
 
-    def test_the_apk_build_gets_the_four_defines(self):
+    def test_the_apk_build_gets_the_url_key_and_email_defines(self):
         step = self.step()
-        for d in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_EMAIL", "SUPABASE_PASSWORD"):
+        for d in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_EMAIL"):
             self.assertIn(f"--dart-define={d}=", step, d)
 
-    def test_the_login_secrets_are_only_given_to_the_apk_build_step(self):
-        for s in ("APP_LOGIN_EMAIL", "APP_LOGIN_PASSWORD"):
-            self.assertEqual(read("app.yml").count(f"secrets.{s}"), 1, s)
-            self.assertIn(f"secrets.{s}", self.step(), s)
+    def test_the_email_secret_is_only_given_to_the_apk_build_step(self):
+        self.assertEqual(read("app.yml").count("secrets.APP_LOGIN_EMAIL"), 1)
+        self.assertIn("secrets.APP_LOGIN_EMAIL", self.step())
+
+    def test_no_password_is_baked_into_the_apk(self):
+        t = read("app.yml")
+        self.assertNotIn("PASSWORD", t)
+        self.assertNotIn("APP_LOGIN_PASSWORD", t)
 
 
 class FailureAlertTest(unittest.TestCase):
