@@ -10,15 +10,27 @@ class SupabaseConfig {
   const SupabaseConfig({required this.url, required this.anonKey, required this.email, required this.password});
   final String url, anonKey, email, password;
 
-  /// The connection saved on this device (the same keys the settings screen writes).
-  factory SupabaseConfig.load(SharedPreferences p) => SupabaseConfig(
-        url: p.getString('c_url') ?? '',
-        anonKey: p.getString('c_key') ?? '',
-        email: p.getString('c_mail') ?? '',
-        password: p.getString('c_pass') ?? '',
+  /// Baked in at build time with --dart-define (see the apk job in app.yml); empty in a plain build.
+  /// Only the URL and the public key: the app reads VN data without a login (see 0003_anon_reads_vn.sql).
+  static const builtIn = SupabaseConfig(
+    url: String.fromEnvironment('SUPABASE_URL'),
+    anonKey: String.fromEnvironment('SUPABASE_ANON_KEY'),
+    email: '',
+    password: '',
+  );
+
+  /// The connection saved on this device (the same keys the settings screen writes). A value never saved falls back
+  /// to the built-in one; a saved blank (the settings "disconnect") stays blank, so demo mode is still reachable.
+  factory SupabaseConfig.load(SharedPreferences p, {SupabaseConfig fallback = builtIn}) => SupabaseConfig(
+        url: p.getString('c_url') ?? fallback.url,
+        anonKey: p.getString('c_key') ?? fallback.anonKey,
+        email: p.getString('c_mail') ?? fallback.email,
+        password: p.getString('c_pass') ?? fallback.password,
       );
 
-  bool get complete => url.isNotEmpty && anonKey.isNotEmpty && email.isNotEmpty && password.isNotEmpty;
+  /// URL and public key are enough; a login is optional (the owner adds one to also read US data).
+  bool get complete => url.isNotEmpty && anonKey.isNotEmpty;
+  bool get hasLogin => email.isNotEmpty && password.isNotEmpty;
 }
 
 /// Reads the bot's tables through the Supabase REST API with the owner's fixed account.
@@ -60,13 +72,13 @@ class SupabaseRepository implements Repository {
   }
 
   Future<List<Map<String, dynamic>>> _select(String table, Map<String, String> q, {bool retried = false}) async {
-    final token = await _login();
+    final token = config.hasLogin ? await _login() : null; // no login: the public key alone reads the VN rows
     final res = await _http.get(_uri('/rest/v1/$table', q), headers: {
       'apikey': config.anonKey,
-      'Authorization': 'Bearer $token',
+      if (token != null) 'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
-    if (res.statusCode == 401 && !retried) {
+    if (res.statusCode == 401 && !retried && token != null) {
       _token = null;
       return _select(table, q, retried: true);
     }

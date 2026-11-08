@@ -156,6 +156,18 @@ void main() {
     expect(s.search(Market.vn, ''), isEmpty);
   });
 
+  test('TC-ANON-01: a device with only URL and public key saved is connected, not on sample data', () async {
+    SharedPreferences.setMockInitialValues({'c_url': 'https://x.test', 'c_key': 'pk'});
+    final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()));
+    expect(s.demo, isFalse);
+  });
+
+  test('TC-ANON-02: a saved blank connection (disconnect) is sample data', () async {
+    SharedPreferences.setMockInitialValues({'c_url': '', 'c_key': ''});
+    final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()));
+    expect(s.demo, isTrue);
+  });
+
   group('news and notifications in the app', () {
     test('stories are ranked hottest first and the hot ones are flagged', () async {
       final s = await _state();

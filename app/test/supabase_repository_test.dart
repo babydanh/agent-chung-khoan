@@ -6,8 +6,69 @@ import 'package:agent_ck/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _cfg = SupabaseConfig(url: 'https://x.supabase.test', anonKey: 'anon-public', email: 'me@x.test', password: 'pw');
+
+void _builtInConnectionTests() {
+  const built = SupabaseConfig(url: 'https://built.test', anonKey: 'pk', email: '', password: '');
+
+  group('SupabaseConfig.load with a connection built into the app', () {
+    test('a device with nothing saved uses the built-in connection', () async {
+      SharedPreferences.setMockInitialValues({});
+      final c = SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built);
+      expect(c.complete, isTrue);
+      expect(c.url, 'https://built.test');
+    });
+
+    test('what the user saved wins over the built-in connection', () async {
+      SharedPreferences.setMockInitialValues({'c_url': 'https://mine.test', 'c_key': 'k', 'c_mail': 'a@b.test', 'c_pass': 'p'});
+      final c = SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built);
+      expect((c.url, c.email), ('https://mine.test', 'a@b.test'));
+    });
+
+    test('a saved disconnect (blank values) stays in demo mode', () async {
+      SharedPreferences.setMockInitialValues({'c_url': '', 'c_key': '', 'c_mail': '', 'c_pass': ''});
+      expect(SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built).complete, isFalse);
+    });
+
+    test('a plain build has no built-in connection', () {
+      expect(SupabaseConfig.builtIn.complete, isFalse);
+    });
+  });
+
+  group('anonymous connection (URL and public key, no login)', () {
+    test('TC-ANON-03: URL and key are enough to be complete; a login is optional', () {
+      expect(built.complete, isTrue);
+      expect(built.hasLogin, isFalse);
+      expect(const SupabaseConfig(url: 'u', anonKey: '', email: '', password: '').complete, isFalse);
+      expect(const SupabaseConfig(url: '', anonKey: 'k', email: '', password: '').complete, isFalse);
+    });
+
+    test('TC-ANON-04: reading signs in nowhere and sends only the public key', () async {
+      final seen = <http.Request>[];
+      final client = MockClient((req) async {
+        seen.add(req);
+        return _json([]);
+      });
+      final repo = SupabaseRepository(built, client: client);
+      expect(await repo.signalHistory(Market.vn, 'FPT'), isEmpty);
+      expect(seen, isNotEmpty);
+      expect(seen.where((r) => r.url.path.startsWith('/auth/')), isEmpty, reason: 'no sign-in call');
+      expect(seen.every((r) => r.headers['apikey'] == 'pk' && !r.headers.containsKey('Authorization')), isTrue);
+    });
+
+    test('TC-ANON-05: a refused read is reported as a permission error, without retrying the sign-in', () async {
+      var calls = 0;
+      final repo = SupabaseRepository(built, client: MockClient((_) async {
+        calls++;
+        return _json({}, 401);
+      }));
+      await expectLater(repo.signalHistory(Market.vn, 'FPT'), throwsA(isA<RepositoryException>().having((e) => e.auth, 'auth', isTrue)));
+      expect(calls, 1);
+    });
+  });
+}
 
 http.Response _json(Object body, [int status = 200]) => http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
 
@@ -51,6 +112,7 @@ MockClient _server({List<http.Request>? seen, bool badLogin = false, int quoteSt
 }
 
 void main() {
+  _builtInConnectionTests();
   test('load signs in once and reads every table for the market', () async {
     final seen = <http.Request>[];
     final repo = SupabaseRepository(_cfg, client: _server(seen: seen));

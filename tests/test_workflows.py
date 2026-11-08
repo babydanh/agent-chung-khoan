@@ -96,6 +96,30 @@ class CliTokenTest(unittest.TestCase):
             self.assertLess(t.index("@anthropic-ai/claude-code@"), t.index("- name: Write bulletin"), n)
 
 
+class AppBuiltInConnectionTest(unittest.TestCase):
+    """TC-APP-PRELOAD: the APK is built with the URL and the public (anon) key inside (--dart-define) and opens without a
+    login. No account, email or password is baked in (the repository and its artifacts are public)."""
+
+    def step(self):
+        t = read("app.yml")
+        i = t.index("- name: \"Build APK")
+        return t[i:t.index("- uses: actions/upload-artifact")]
+
+    def test_the_apk_build_gets_the_url_and_public_key_defines(self):
+        step = self.step()
+        for d in ("SUPABASE_URL", "SUPABASE_ANON_KEY"):
+            self.assertIn(f"--dart-define={d}=", step, d)
+
+    def test_the_public_key_secret_is_only_given_to_the_apk_build_step(self):
+        self.assertEqual(read("app.yml").count("secrets.APP_SUPABASE_ANON_KEY"), 1)
+        self.assertIn("secrets.APP_SUPABASE_ANON_KEY", self.step())
+
+    def test_no_login_is_baked_into_the_apk(self):
+        t = read("app.yml")
+        for word in ("PASSWORD", "APP_LOGIN", "SUPABASE_EMAIL"):
+            self.assertNotIn(word, t, word)
+
+
 class FailureAlertTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
 
