@@ -8,6 +8,7 @@ import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
 import '../widgets/common.dart';
+import '../widgets/chart_marks.dart';
 import '../widgets/line_chart.dart';
 import '../widgets/price_bar.dart';
 
@@ -118,6 +119,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final vn = q.market == Market.vn;
     final days = _range == '1T' ? 7 : _range == '1M' ? 30 : 90;
     final bars = _bars == null ? const <DailyBar>[] : _bars!.sublist((_bars!.length - days).clamp(0, _bars!.length));
+    final headlines = [for (final n in AppScope.of(context).of(q.market).news) if (n.symbol == q.symbol) n];
+    final marks = groupByBar(bars, [...signalMarks(_history ?? const []), ...newsMarks(headlines)]);
     return [
       PriceBar(q),
       Padding(
@@ -130,8 +133,9 @@ class _DetailScreenState extends State<DetailScreen> {
         padding: const EdgeInsets.all(Sp.s4),
         child: bars.length < 2
             ? SizedBox(height: 100, child: Center(child: Text(_bars == null ? '…' : 'Chưa có dữ liệu ngày', style: AppText.base(c.text3, size: Ts.s))))
-            : LineChart(bars, color: c.accent),
+            : LineChart(bars, color: c.accent, marks: marks, onMarkTap: (d) => _showDay(context, d)),
       ),
+      if (marks.isNotEmpty) _markLegend(c),
       _tiles(context, [
         ('Khối lượng', f.volume(q.vol), null),
         ('Giá trị', f.valueBillions(q.val), null),
@@ -150,6 +154,55 @@ class _DetailScreenState extends State<DetailScreen> {
             : Wrap(spacing: Sp.s2, runSpacing: Sp.s2, children: [for (final i in sig!.items) _signalChip(c, i)]),
       ),
     ];
+  }
+
+  Widget _markLegend(AppColors c) {
+    Widget dot(Color color) => Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Sp.s4, 0, Sp.s4, Sp.s2),
+      child: Wrap(spacing: Sp.s3, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        for (var l = 1; l <= 3; l++) Row(mainAxisSize: MainAxisSize.min, children: [dot(c.levels[l]), const SizedBox(width: 4), Text('Mức $l', style: AppText.base(c.text2, size: Ts.xs))]),
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: c.text2, width: 1.5))),
+          const SizedBox(width: 4),
+          Text('Tin', style: AppText.base(c.text2, size: Ts.xs)),
+        ]),
+        Text('Bấm chấm để xem', style: AppText.base(c.text3, size: Ts.xs)),
+      ]),
+    );
+  }
+
+  /// What the signals and headlines of one day said. Only reports what happened.
+  void _showDay(BuildContext context, DayMarks day) {
+    final c = context.c;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: c.surface,
+      isScrollControlled: true,
+      builder: (_) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+          child: ListView(shrinkWrap: true, padding: const EdgeInsets.symmetric(vertical: Sp.s4), children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Sp.s4, 0, Sp.s4, Sp.s2),
+              child: Text(f.dayMonth(day.date), style: AppText.base(c.text, size: Ts.l, weight: FontWeight.w700)),
+            ),
+            for (final m in day.marks)
+              if (m.kind == MarkKind.news)
+                NewsTile(NewsItem(title: m.title, url: m.url ?? '', source: m.detail ?? '', symbol: widget.symbol, publishedAt: m.at))
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Sp.s4, vertical: Sp.s2),
+                  child: Row(children: [
+                    SizedBox(width: 44, child: Text(f.hhmm(m.at), style: AppText.num(c.text2, size: Ts.xs, weight: FontWeight.w500))),
+                    Container(width: 3, height: 28, margin: const EdgeInsets.only(right: Sp.s3), color: c.levels[m.level.clamp(0, 3)]),
+                    Expanded(child: Text('Mức ${m.level} · ${m.title}', style: AppText.base(c.text, size: Ts.s))),
+                  ]),
+                ),
+          ]),
+        ),
+      ),
+    );
   }
 
   Widget _signalChip(AppColors c, SignalItem i) {
