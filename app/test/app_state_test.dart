@@ -277,7 +277,8 @@ void main() {
       final n = FakeNotifier();
       SharedPreferences.setMockInitialValues({});
       final client = MockClient((_) async => http.Response('<rss><channel><item><title>AAA báo lãi quý 3</title><link>https://x.test/1</link><description>d</description></item></channel></rss>', 200, headers: {'content-type': 'application/rss+xml; charset=utf-8'}));
-      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()), notifier: n, httpClient: client);
+      final at = DateTime.utc(2026, 11, 5, 3); // 10:00 in Vietnam: outside the quiet hours, whatever the real clock says
+      final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data(asof: at)), notifier: n, httpClient: client, now: () => at);
       await s.refreshAll();
       expect(s.of(Market.vn).quotes, hasLength(3));
       expect(s.stories.single.head.title, 'AAA báo lãi quý 3');
