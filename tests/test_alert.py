@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime, timezone
 
 from pipeline.alert import build_message, main, send
 from tests.fakehttp import FakeServer
@@ -48,7 +49,7 @@ class MainTest(unittest.TestCase):
         self.assertNotIn("TOKENVALUE", body["text"])
 
     def test_a_missing_secret_fails_loudly_and_names_the_variable(self):
-        for drop in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "RUN_URL", "WORKFLOW_NAME"):
+        for drop in ("RUN_URL", "WORKFLOW_NAME"):
             env = {k: v for k, v in ENV.items() if k != drop}
             with self.assertLogs("pipeline.alert", level="ERROR") as cm:
                 code = main(env, base="http://127.0.0.1:1", sleep=lambda x: None)
@@ -58,7 +59,14 @@ class MainTest(unittest.TestCase):
 
     def test_blank_secret_counts_as_missing(self):
         with self.assertLogs("pipeline.alert", level="ERROR"):
-            self.assertEqual(main({**ENV, "TELEGRAM_CHAT_ID": "  "}, base="http://127.0.0.1:1"), 2)
+            self.assertEqual(main({**ENV, "RUN_URL": "  "}, base="http://127.0.0.1:1"), 2)
+
+    def test_no_channel_at_all_is_an_error_that_names_the_choices(self):  # TC-ALERT-APP-01
+        env = {"WORKFLOW_NAME": "snap-vn", "RUN_URL": "https://github.com/o/r/actions/runs/42"}
+        with self.assertLogs("pipeline.alert", level="ERROR") as cm:
+            self.assertEqual(main(env, base="http://127.0.0.1:1"), 2)
+        self.assertIn("SUPABASE_URL", "".join(cm.output))
+        self.assertIn("TELEGRAM_BOT_TOKEN", "".join(cm.output))
 
     def test_a_send_failure_exits_non_zero_without_leaking_the_token(self):
         with FakeServer(lambda *a: (401, {"ok": False})) as s:
@@ -81,6 +89,71 @@ class MainTest(unittest.TestCase):
         with FakeServer(ok_handler) as s:
             self.assertEqual(main({**ENV, "ALERT_DETAIL_FILE": "/nonexistent/x.txt"}, base=s.url,
                                   sleep=lambda x: None), 0)
+
+
+NOW = datetime(2026, 11, 9, 2, 20, tzinfo=timezone.utc)  # 09:20 in Vietnam
+APP_ENV = {"WORKFLOW_NAME": "snap-vn", "RUN_URL": "https://github.com/o/r/actions/runs/42", "SUPABASE_URL": "",
+           "SUPABASE_SECRET_KEY": "SECRETKEYVALUE"}
+
+
+def digests(reqs):
+    return [r for r in reqs if r["method"] == "POST" and r["path"].startswith("/rest/v1/digests?")]
+
+
+class AppAlertTest(unittest.TestCase):
+    """The failure also lands in the app's digests, so it reaches the user without any chat service."""
+
+    def run_main(self, handler=lambda *a: (201, None), **extra):
+        with FakeServer(handler) as s:
+            code = main({**APP_ENV, "SUPABASE_URL": s.url, **extra}, base="http://127.0.0.1:1", sleep=lambda x: None, now=NOW)
+            return code, s.requests
+
+    def test_a_failure_is_stored_as_an_alert_digest_for_the_market(self):  # TC-ALERT-APP-02
+        code, reqs = self.run_main(ALERT_MARKET="US")
+        self.assertEqual(code, 0)
+        (d,) = digests(reqs)
+        row = d["body"][0]
+        self.assertEqual((row["market"], row["digest_date"], row["kind"]), ("US", "2026-11-09", "alert-0920"))
+        self.assertEqual(row["body"].splitlines()[0], "Cảnh báo: snap-vn chạy lỗi.")
+        self.assertIn("https://github.com/o/r/actions/runs/42", row["body"])
+
+    def test_the_market_defaults_to_vn_and_the_detail_is_appended(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("VN 2026-11-09: 10/11 slots")
+        try:
+            code, reqs = self.run_main(ALERT_DETAIL_FILE=f.name)
+        finally:
+            os.unlink(f.name)
+        row = digests(reqs)[0]["body"][0]
+        self.assertEqual(row["market"], "VN")
+        self.assertIn("10/11 slots", row["body"])
+
+    def test_the_secret_key_never_appears_in_what_is_stored(self):
+        _, reqs = self.run_main()
+        self.assertNotIn("SECRETKEYVALUE", str(digests(reqs)[0]["body"]))
+
+    def test_telegram_is_still_sent_when_it_is_configured(self):
+        with FakeServer(ok_handler) as tg:
+            with FakeServer(lambda *a: (201, None)) as db:
+                code = main({**ENV, **APP_ENV, "SUPABASE_URL": db.url}, base=tg.url, sleep=lambda x: None, now=NOW)
+                stored = digests(db.requests)
+            sent = tg.requests
+        self.assertEqual((code, len(stored), len(sent)), (0, 1, 1))
+
+    def test_a_database_failure_exits_non_zero(self):  # TC-ALERT-APP-03
+        with self.assertLogs("pipeline.alert", level="ERROR") as cm:
+            code, _ = self.run_main(handler=lambda *a: (500, {}))
+        self.assertEqual(code, 1)
+        self.assertNotIn("SECRETKEYVALUE", "".join(cm.output))
+
+    def test_the_app_copy_is_written_even_when_telegram_refuses(self):
+        with FakeServer(lambda *a: (401, {"ok": False})) as tg:
+            with FakeServer(lambda *a: (201, None)) as db:
+                with self.assertLogs("pipeline.alert", level="ERROR"):
+                    code = main({**ENV, **APP_ENV, "SUPABASE_URL": db.url}, base=tg.url, sleep=lambda x: None, now=NOW)
+                stored = digests(db.requests)
+        self.assertEqual(len(stored), 1, "the app copy is written even when Telegram refuses")
+        self.assertEqual(code, 1, "a failing channel still makes the run exit non-zero")
 
 
 if __name__ == "__main__":

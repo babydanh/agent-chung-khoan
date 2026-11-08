@@ -156,6 +156,13 @@ class FailureAlertTest(unittest.TestCase):
             self.assertIn("github.workflow", step, n)
             self.assertTrue(t.rstrip().endswith(step.rstrip()), f"{n}: the alert must be the last step")
 
+    def test_the_alert_step_also_reaches_the_app_for_the_right_market(self):  # TC-ALERT-APP-04
+        for n, market in (("snap-vn.yml", "VN"), ("snap-us.yml", "US"), ("eod.yml", "VN"), ("weekend.yml", "VN")):
+            step = self.step(read(n), "Alert on failure")
+            self.assertIn("SUPABASE_URL: ${{ secrets.SUPABASE_URL }}", step, n)
+            self.assertIn("SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}", step, n)
+            self.assertIn(f"ALERT_MARKET: {market}", step, n)
+
     def test_telegram_secrets_are_only_given_to_the_alert_step(self):
         for n in self.NAMES:
             t = read(n)
