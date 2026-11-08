@@ -250,10 +250,36 @@ def _slot_complete(db, market, meta_asof):
             and bool(beat) and datetime.fromisoformat(beat[0]["last_seen"]) >= want)
 
 
+def _source(market, env, sleep):
+    if market == "VN":
+        return lambda syms: sources.fetch_vn(syms, sleep=sleep)
+    return lambda syms: alpaca.fetch(syms, env["APCA_API_KEY_ID"], env["APCA_API_SECRET_KEY"], sleep=sleep)
+
+
+def _refresh_quotes(db, market, now, symbols, fetch):
+    """Outside the run window: put the last session's closing board into quotes_latest so the app has prices to show.
+    Nothing else is written (no snapshot, bars, signals or heartbeat): the next scheduled run still starts from the
+    open, because the first run of a day counts from zero whatever the earlier quotes were."""
+    try:
+        rows = fetch(symbols)
+    except SourceError as e:
+        log.error("no data source answered: %s", e)
+        return 1
+    need = max(1, MIN_LIVE_SHARE * len(symbols))
+    if len(rows) < need:
+        log.error("feed has %d live symbols of %d requested (need %d): nothing written", len(rows), len(symbols), need)
+        return 1
+    db.upsert("quotes_latest", [_row_to_quote(market, s, r, now.isoformat()) for s, r in rows.items()], "market,symbol")
+    log.info("refreshed %d quotes outside the run window", len(rows))
+    return 0
+
+
 def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
     ap = argparse.ArgumentParser(prog="pipeline.run")
     ap.add_argument("--market", required=True, choices=("VN", "US"))
-    market = ap.parse_args(argv).market
+    ap.add_argument("--refresh-quotes", action="store_true", help="outside the run window: only refresh quotes_latest")
+    args = ap.parse_args(argv)
+    market = args.market
     now = now or datetime.now(timezone.utc)
 
     try:
@@ -269,7 +295,14 @@ def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
     db.sleep = sleep
 
     cal = calendar.load(ROOT / "config" / "calendar.json")
-    if not calendar.is_run_window(market, now, cal):
+    in_window = calendar.is_run_window(market, now, cal)
+    if args.refresh_quotes:
+        if in_window:
+            log.info("inside the run window: the scheduled snapshot writes the quotes, nothing to do")
+            return 0
+        symbols = symbols or calendar.load(ROOT / "config" / "symbols.json")[market]
+        return _refresh_quotes(db, market, now, symbols, fetch or _source(market, env, sleep))
+    if not in_window:
         log.info("outside the run window, nothing to do")
         return 0
     late = late_minutes(market, now)
@@ -283,11 +316,7 @@ def main(argv, env, now=None, fetch=None, symbols=None, sleep=None):
     sessions = sessions_for(market, local_day.isoformat(), cal)
     slot_dt = slot_start(market, now)
     slot = slot_dt.isoformat()
-    if fetch is None:
-        if market == "VN":
-            fetch = lambda syms: sources.fetch_vn(syms, sleep=sleep)
-        else:
-            fetch = lambda syms: alpaca.fetch(syms, env["APCA_API_KEY_ID"], env["APCA_API_SECRET_KEY"], sleep=sleep)
+    fetch = fetch or _source(market, env, sleep)
 
     meta = db.select("snapshot_meta", {"market": "eq." + market, "slot_start": "eq." + slot, "select": "id,asof"})
     if meta and _slot_complete(db, market, meta[0]["asof"]):
