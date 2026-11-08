@@ -96,6 +96,25 @@ class CliTokenTest(unittest.TestCase):
             self.assertLess(t.index("@anthropic-ai/claude-code@"), t.index("- name: Write bulletin"), n)
 
 
+class AppBuiltInConnectionTest(unittest.TestCase):
+    """TC-APP-PRELOAD: the APK is built with the connection inside (--dart-define); the login secret reaches only that step."""
+
+    def step(self):
+        t = read("app.yml")
+        i = t.index("- name: \"Build APK")
+        return t[i:t.index("- uses: actions/upload-artifact")]
+
+    def test_the_apk_build_gets_the_four_defines(self):
+        step = self.step()
+        for d in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_EMAIL", "SUPABASE_PASSWORD"):
+            self.assertIn(f"--dart-define={d}=", step, d)
+
+    def test_the_login_secrets_are_only_given_to_the_apk_build_step(self):
+        for s in ("APP_LOGIN_EMAIL", "APP_LOGIN_PASSWORD"):
+            self.assertEqual(read("app.yml").count(f"secrets.{s}"), 1, s)
+            self.assertIn(f"secrets.{s}", self.step(), s)
+
+
 class FailureAlertTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
 
