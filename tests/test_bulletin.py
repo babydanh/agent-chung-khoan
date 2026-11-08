@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from pipeline import bulletin
 from tests.fakehttp import FakeServer
@@ -38,10 +38,10 @@ def handler(signal_rows, noted=()):
     return h
 
 
-def run(rows, env=None, make=fake_make, text=lambda url: RSS, argv=("--market", "VN"), annotate=no_notes, noted=()):
+def run(rows, env=None, make=fake_make, text=lambda url: RSS, argv=("--market", "VN"), annotate=no_notes, noted=(), now=NOW):
     with FakeServer(handler(rows, noted)) as s:
         env = {"SUPABASE_URL": s.url, "SUPABASE_SECRET_KEY": "k", "ANTHROPIC_API_KEY": "a", **(env or {})}
-        code = bulletin.main(list(argv), env, now=NOW, get_text=text, make=make, annotate=annotate, sleep=lambda x: None)
+        code = bulletin.main(list(argv), env, now=now, get_text=text, make=make, annotate=annotate, sleep=lambda x: None)
         return code, s.requests
 
 
@@ -174,3 +174,46 @@ class HeadlineNotesTest(unittest.TestCase):
         _, reqs = run(self.rows)
         (n,) = posts(reqs, "news")
         self.assertEqual(n["body"][0]["symbol"], "HPG")  # the detail screen filters headlines by symbol
+
+
+class QuietWindowTest(unittest.TestCase):
+    """TC-QUIET: no model bulletin from 01:00 up to 05:00 Vietnam time, nor on Saturday and Sunday (saves tokens). The
+    snapshot job still runs before it, so the data and the end-of-day check are untouched."""
+
+    def setUp(self):
+        fake_make.calls.clear()
+        self.rows = [{"market": "VN", "asof": ASOF, "symbol": "HPG", "level": 2, "learning": False, "items": ITEMS[0]["signals"]}]
+
+    def at(self, y, m, d, hh, mm):  # Vietnam time -> UTC (UTC+7)
+        return datetime(y, m, d, hh, mm, tzinfo=timezone.utc) - timedelta(hours=7)
+
+    def test_quiet_01_from_one_to_five_in_the_morning_nothing_is_asked_nothing_is_read_or_written(self):
+        for market in ("VN", "US"):
+            code, reqs = run(self.rows, now=self.at(2026, 11, 4, 2, 30), argv=("--market", market), annotate=self.fail_if_asked)
+            self.assertEqual((code, reqs, fake_make.calls), (0, [], []), market)
+
+    def fail_if_asked(self, *a):
+        raise AssertionError("the notes must not be asked for in the quiet window")
+
+    def test_quiet_02_the_window_is_one_oh_oh_up_to_but_not_including_five(self):
+        for hh, mm, quiet in ((0, 59, False), (1, 0, True), (4, 59, True), (5, 0, False)):
+            fake_make.calls.clear()
+            code, _ = run(self.rows, now=self.at(2026, 11, 4, hh, mm))
+            self.assertEqual((code, len(fake_make.calls)), (0, 0 if quiet else 1), f"{hh:02d}:{mm:02d}")
+
+    def test_quiet_03_saturday_and_sunday_are_quiet_all_day_in_vietnam_time(self):
+        for when in (self.at(2026, 11, 7, 0, 35), self.at(2026, 11, 7, 10, 0), self.at(2026, 11, 8, 12, 0), self.at(2026, 11, 8, 23, 59)):
+            code, reqs = run(self.rows, now=when, argv=("--market", "US"))
+            self.assertEqual((code, reqs, fake_make.calls), (0, [], []), when.isoformat())
+
+    def test_quiet_04_monday_morning_and_friday_night_are_not_quiet(self):
+        for when in (self.at(2026, 11, 9, 9, 20), self.at(2026, 11, 6, 23, 35), self.at(2026, 11, 6, 23, 59)):
+            fake_make.calls.clear()
+            run(self.rows, now=when)
+            self.assertEqual(len(fake_make.calls), 1, when.isoformat())
+
+    def test_quiet_05_the_weekend_bulletin_is_built_by_code_and_still_runs_on_weekends(self):
+        code, reqs = run(self.rows, now=self.at(2026, 11, 7, 9, 0), argv=("--market", "VN", "--weekend"))
+        self.assertEqual(code, 0)
+        self.assertEqual([r["body"][0]["kind"] for r in posts(reqs, "digests")], ["weekend"])
+        self.assertEqual(fake_make.calls, [])
