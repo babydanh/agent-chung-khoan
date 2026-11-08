@@ -7,6 +7,7 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
+import '../util/signal_outcome.dart';
 import '../widgets/common.dart';
 import '../widgets/chart_marks.dart';
 import '../widgets/line_chart.dart';
@@ -281,20 +282,46 @@ class _DetailScreenState extends State<DetailScreen> {
     final h = _history;
     if (h == null) return [const SkeletonRows(count: 4)];
     if (h.isEmpty) return [const SizedBox(height: 240, child: EmptyState('list', 'Chưa có lịch sử tín hiệu'))];
+    final bars = _bars ?? const <DailyBar>[];
+    final summary = outcomeLine(outcomes(bars, h));
     return [
+      if (summary != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Sp.s4, Sp.s2, Sp.s4, Sp.s2),
+          child: Text(summary, style: AppText.base(c.text2, size: Ts.xs)),
+        ),
       for (final r in h)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Sp.s4, vertical: Sp.s2),
           child: Row(children: [
             SizedBox(width: 72, child: Text('${f.dayMonth(r.asof ?? DateTime.now())} ${f.hhmm(r.asof)}', style: AppText.num(c.text2, size: Ts.xs, weight: FontWeight.w500))),
-            Container(width: 3, height: 28, margin: const EdgeInsets.symmetric(horizontal: Sp.s3), color: c.levels[r.level]),
-            Expanded(child: Row(children: [
-              for (final i in r.items) Padding(padding: const EdgeInsets.only(right: 8), child: AppIcon(switch (i.id) { 'S1' => 'zap', 'S2' => 'globe', 'S3' => 'swap', _ => 'up' }, size: 16, color: c.text)),
+            Container(width: 3, height: 40, margin: const EdgeInsets.symmetric(horizontal: Sp.s3), color: c.levels[r.level]),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                for (final i in r.items) Padding(padding: const EdgeInsets.only(right: 8), child: AppIcon(switch (i.id) { 'S1' => 'zap', 'S2' => 'globe', 'S3' => 'swap', _ => 'up' }, size: 16, color: c.text)),
+              ]),
+              ?_after(c, bars, r),
             ])),
             LevelChip(r.level),
           ]),
         ),
     ];
+  }
+
+  /// "Sau 1 phiên +1,20% · 3 phiên −0,50%" for a past signal, or null when neither can be measured yet.
+  Widget? _after(AppColors c, List<DailyBar> bars, SignalRow r) {
+    final at = r.asof;
+    if (at == null) return null;
+    final one = changeAfter(bars, at, 1), three = changeAfter(bars, at, 3);
+    if (one == null && three == null) return null;
+    TextSpan span(String label, double? v) => TextSpan(children: [
+          TextSpan(text: '$label ', style: TextStyle(color: c.text3)),
+          TextSpan(text: f.percent(v), style: TextStyle(color: v == null || v.abs() < 0.005 ? c.text3 : v > 0 ? c.up : c.down)),
+        ]);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text.rich(TextSpan(children: [span('Sau 1 phiên', one), const TextSpan(text: '  ·  '), span('3 phiên', three)]), style: AppText.num(c.text2, size: Ts.xs, weight: FontWeight.w400)),
+    );
   }
 
   List<Widget> _zones(BuildContext context, Quote q, List<Zone> zones) {
