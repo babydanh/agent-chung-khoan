@@ -107,14 +107,20 @@ begin
   if exists (select 1 from pg_indexes where indexname in ('watchlists_user_id_idx', 'prefs_user_id_idx')) then raise exception 'redundant user_id index present'; end if;
 end $$;
 
--- anon: nothing readable in any public table or view.
+-- anon (the app, no login): reads only the VN rows of the market tables, nothing else, and never writes.
 set local role anon;
 do $$
-declare r record;
+declare r record; t text;
 begin
   for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
-           where n.nspname = 'public' and c.relkind in ('r', 'p', 'v') loop
+           where n.nspname = 'public' and c.relkind in ('r', 'p', 'v')
+             and c.relname not in ('quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news') loop
     if public._t_count('public.' || quote_ident(r.relname)) <> 0 then raise exception 'anon can read %', r.relname; end if;
+  end loop;
+  foreach t in array array['quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news'] loop
+    if public._t_count('public.' || t || ' where market = ''VN''') < 1 then raise exception 'anon cannot read the VN rows of %', t; end if;
+    if public._t_count('public.' || t || ' where market = ''US''') <> 0 then raise exception 'anon reads US rows of %', t; end if;
+    if public._t_exec('delete from public.' || t) > -1 then raise exception 'anon can delete from %', t; end if;
   end loop;
   if public._t_exec('select public.delete_my_account()') > 0 then raise exception 'anon can call delete_my_account'; end if;
   if public._t_exec('select public.is_app_owner()') > 0 then raise exception 'anon can call is_app_owner'; end if;

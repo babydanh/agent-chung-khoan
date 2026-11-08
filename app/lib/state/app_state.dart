@@ -93,12 +93,6 @@ class AppState extends ChangeNotifier {
 
   bool get demo => !connection.complete;
 
-  /// A login is set up (URL, key, email) but its password is missing or was refused: ask for the PIN.
-  bool get needsPin {
-    final c = connection;
-    return c.url.isNotEmpty && c.anonKey.isNotEmpty && c.email.isNotEmpty && (c.password.isEmpty || authError);
-  }
-
   // --- data ---------------------------------------------------------------------------------------
   final Map<Market, MarketData> data = {};
   final Map<Market, DateTime> loadedAt = {};
@@ -233,10 +227,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     await load();
   }
-
-  /// The PIN is the password of the app's login: keep the rest of the connection and save it with the new password.
-  Future<void> submitPin(String pin) => saveConnection(
-      SupabaseConfig(url: connection.url, anonKey: connection.anonKey, email: connection.email, password: pin.trim()));
 
   // --- derived lists ------------------------------------------------------------------------------
   /// Board rows after the quick chip, the filter sheet and the sort.

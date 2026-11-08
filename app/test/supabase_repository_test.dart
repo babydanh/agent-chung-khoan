@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _cfg = SupabaseConfig(url: 'https://x.supabase.test', anonKey: 'anon-public', email: 'me@x.test', password: 'pw');
 
 void _builtInConnectionTests() {
-  const built = SupabaseConfig(url: 'https://built.test', anonKey: 'pk', email: 'reader@x.test', password: 'pw');
+  const built = SupabaseConfig(url: 'https://built.test', anonKey: 'pk', email: '', password: '');
 
   group('SupabaseConfig.load with a connection built into the app', () {
     test('a device with nothing saved uses the built-in connection', () async {
@@ -34,6 +34,38 @@ void _builtInConnectionTests() {
 
     test('a plain build has no built-in connection', () {
       expect(SupabaseConfig.builtIn.complete, isFalse);
+    });
+  });
+
+  group('anonymous connection (URL and public key, no login)', () {
+    test('TC-ANON-03: URL and key are enough to be complete; a login is optional', () {
+      expect(built.complete, isTrue);
+      expect(built.hasLogin, isFalse);
+      expect(const SupabaseConfig(url: 'u', anonKey: '', email: '', password: '').complete, isFalse);
+      expect(const SupabaseConfig(url: '', anonKey: 'k', email: '', password: '').complete, isFalse);
+    });
+
+    test('TC-ANON-04: reading signs in nowhere and sends only the public key', () async {
+      final seen = <http.Request>[];
+      final client = MockClient((req) async {
+        seen.add(req);
+        return _json([]);
+      });
+      final repo = SupabaseRepository(built, client: client);
+      expect(await repo.signalHistory(Market.vn, 'FPT'), isEmpty);
+      expect(seen, isNotEmpty);
+      expect(seen.where((r) => r.url.path.startsWith('/auth/')), isEmpty, reason: 'no sign-in call');
+      expect(seen.every((r) => r.headers['apikey'] == 'pk' && !r.headers.containsKey('Authorization')), isTrue);
+    });
+
+    test('TC-ANON-05: a refused read is reported as a permission error, without retrying the sign-in', () async {
+      var calls = 0;
+      final repo = SupabaseRepository(built, client: MockClient((_) async {
+        calls++;
+        return _json({}, 401);
+      }));
+      await expectLater(repo.signalHistory(Market.vn, 'FPT'), throwsA(isA<RepositoryException>().having((e) => e.auth, 'auth', isTrue)));
+      expect(calls, 1);
     });
   });
 }

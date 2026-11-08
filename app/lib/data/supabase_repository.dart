@@ -11,11 +11,11 @@ class SupabaseConfig {
   final String url, anonKey, email, password;
 
   /// Baked in at build time with --dart-define (see the apk job in app.yml); empty in a plain build.
-  /// The password is never baked in: it is the PIN the user types on first start.
+  /// Only the URL and the public key: the app reads VN data without a login (see 0003_anon_reads_vn.sql).
   static const builtIn = SupabaseConfig(
     url: String.fromEnvironment('SUPABASE_URL'),
     anonKey: String.fromEnvironment('SUPABASE_ANON_KEY'),
-    email: String.fromEnvironment('SUPABASE_EMAIL'),
+    email: '',
     password: '',
   );
 
@@ -28,7 +28,9 @@ class SupabaseConfig {
         password: p.getString('c_pass') ?? fallback.password,
       );
 
-  bool get complete => url.isNotEmpty && anonKey.isNotEmpty && email.isNotEmpty && password.isNotEmpty;
+  /// URL and public key are enough; a login is optional (the owner adds one to also read US data).
+  bool get complete => url.isNotEmpty && anonKey.isNotEmpty;
+  bool get hasLogin => email.isNotEmpty && password.isNotEmpty;
 }
 
 /// Reads the bot's tables through the Supabase REST API with the owner's fixed account.
@@ -70,13 +72,13 @@ class SupabaseRepository implements Repository {
   }
 
   Future<List<Map<String, dynamic>>> _select(String table, Map<String, String> q, {bool retried = false}) async {
-    final token = await _login();
+    final token = config.hasLogin ? await _login() : null; // no login: the public key alone reads the VN rows
     final res = await _http.get(_uri('/rest/v1/$table', q), headers: {
       'apikey': config.anonKey,
-      'Authorization': 'Bearer $token',
+      if (token != null) 'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
-    if (res.statusCode == 401 && !retried) {
+    if (res.statusCode == 401 && !retried && token != null) {
       _token = null;
       return _select(table, q, retried: true);
     }

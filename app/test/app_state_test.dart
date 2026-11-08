@@ -156,40 +156,16 @@ void main() {
     expect(s.search(Market.vn, ''), isEmpty);
   });
 
-  group('PIN (the login password) typed on the phone', () {
-    const login = {'c_url': 'http://127.0.0.1:1', 'c_key': 'pk', 'c_mail': 'reader@x.test'};
+  test('TC-ANON-01: a device with only URL and public key saved is connected, not on sample data', () async {
+    SharedPreferences.setMockInitialValues({'c_url': 'https://x.test', 'c_key': 'pk'});
+    final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()));
+    expect(s.demo, isFalse);
+  });
 
-    Future<AppState> app(Map<String, Object> stored, {Object? fail}) async {
-      SharedPreferences.setMockInitialValues(stored);
-      return AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data(), fail: fail));
-    }
-
-    test('TC-PIN-01: a connection without a password asks for the PIN', () async {
-      expect((await app(login)).needsPin, isTrue);
-    });
-
-    test('TC-PIN-02: with a saved password it does not ask', () async {
-      expect((await app({...login, 'c_pass': '123456'})).needsPin, isFalse);
-    });
-
-    test('TC-PIN-03: a PIN the server refused is asked for again', () async {
-      final s = await app({...login, 'c_pass': '000000'}, fail: RepositoryException('Sai email hoặc mật khẩu', auth: true));
-      await s.load(Market.vn);
-      expect(s.needsPin, isTrue);
-    });
-
-    test('TC-PIN-04: no connection at all (sample data) never asks', () async {
-      expect((await app({})).needsPin, isFalse);
-      expect((await app({'c_url': '', 'c_key': '', 'c_mail': '', 'c_pass': ''})).needsPin, isFalse);
-    });
-
-    test('TC-PIN-05: submitting the PIN saves it with the rest of the connection', () async {
-      final s = await app(login);
-      await s.submitPin(' 123456 ');
-      expect(s.connection.password, '123456');
-      expect((await SharedPreferences.getInstance()).getString('c_pass'), '123456');
-      expect(s.needsPin, isFalse);
-    });
+  test('TC-ANON-02: a saved blank connection (disconnect) is sample data', () async {
+    SharedPreferences.setMockInitialValues({'c_url': '', 'c_key': ''});
+    final s = AppState(await SharedPreferences.getInstance(), repository: FakeRepo(_data()));
+    expect(s.demo, isTrue);
   });
 
   group('news and notifications in the app', () {

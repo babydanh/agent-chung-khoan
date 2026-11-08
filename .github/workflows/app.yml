@@ -51,18 +51,16 @@ jobs:
           curl -fsSL --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" | tar -xJ -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
       - name: "Build APK (signed with the debug key, for installing on your own phone only)"
-        # URL, public key and the app's read-only email are baked in; the password is a PIN typed on the phone.
+        # Only the URL and the public (anon) key are baked in; the app reads VN data without a login.
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           APP_ANON_KEY: ${{ secrets.APP_SUPABASE_ANON_KEY }}
-          APP_EMAIL: ${{ secrets.APP_LOGIN_EMAIL }}
         run: |
           export JAVA_HOME="$JAVA_HOME_17_X64"
           flutter pub get
           flutter build apk --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_ANON_KEY="$APP_ANON_KEY" \
-            --dart-define=SUPABASE_EMAIL="$APP_EMAIL"
+            --dart-define=SUPABASE_ANON_KEY="$APP_ANON_KEY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: agent-ck-apk

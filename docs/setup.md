@@ -5,7 +5,7 @@ Code đã đủ để chạy; còn lại là các bước cần quyền của ch
 ## 1. Supabase (project thật)
 1. Tạo project (vùng Nhật). Chạy `SHOW server_version;` rồi so với `supabase/config.toml` (`major_version`, hiện 17); lệch thì sửa `config.toml` và `mutate.sh`.
 2. **Tắt Anonymous sign-ins** (Authentication → Sign In / Providers).
-3. Áp migration theo thứ tự: `0001_init.sql`, `0002_market_and_app_tables.sql` (SQL Editor hoặc `supabase db push`).
+3. Áp migration theo thứ tự: `0001_init.sql`, `0002_market_and_app_tables.sql`, `0003_anon_reads_vn.sql` (SQL Editor hoặc `supabase db push`).
 4. Chạy `supabase/tests/rls.sql` trong SQL Editor: phải thấy `RLS OK` (nó rollback hết).
 5. Thêm chủ ứng dụng (xem được dữ liệu Mỹ): đăng nhập một lần, rồi `insert into public.app_owners values ('<uuid của bạn>');`.
 6. Lấy `Project URL` và **secret key** (không phải publishable/anon key) cho bot.
