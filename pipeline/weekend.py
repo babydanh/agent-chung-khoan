@@ -41,7 +41,7 @@ def classify(text):
 
 def _signals_line(ranked):
     if not ranked:
-        return "Phiên gần nhất: không có mã nào có dấu hiệu dòng tiền lớn."
+        return "Phiên gần nhất: chưa ghi nhận mã nào có dấu hiệu dòng tiền lớn."  # true whether none fired or no data yet
     top = ", ".join(f"{i['symbol']} (mức {i['level']})" for i in ranked[:MAX_SYMBOLS])
     return f"Phiên gần nhất: {len(ranked)} mã có dấu hiệu dòng tiền lớn. Mạnh nhất: {top}."
 
