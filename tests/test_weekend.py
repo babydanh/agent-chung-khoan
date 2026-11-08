@@ -79,7 +79,7 @@ class BuildTest(unittest.TestCase):
 
     def test_no_data_says_so_instead_of_inventing_anything(self):  # TC-WEEKEND-05
         t = self.text(items=[], heads=[])
-        self.assertIn("không có mã nào", t)
+        self.assertIn("chưa ghi nhận mã nào", t)
         self.assertIn("chưa đọc được tin nào", t)
         self.assertIn("Chưa có điểm đặc biệt", t)
         self.assertEqual(find_banned(t), [])
@@ -140,7 +140,7 @@ class WeekendJobTest(unittest.TestCase):
         code, reqs = run([{**self.rows[0], "asof": old}], asof=old)
         self.assertEqual(code, 0)
         (d,) = posts(reqs, "digests")
-        self.assertIn("không có mã nào", d["body"][0]["body"])
+        self.assertIn("chưa ghi nhận mã nào", d["body"][0]["body"])
 
     def test_the_us_market_has_no_weekend_bulletin(self):  # TC-WEEKEND-08
         code, reqs = run(self.rows, argv=("--market", "US", "--weekend"))
