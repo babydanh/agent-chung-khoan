@@ -6,8 +6,37 @@ import 'package:agent_ck/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _cfg = SupabaseConfig(url: 'https://x.supabase.test', anonKey: 'anon-public', email: 'me@x.test', password: 'pw');
+
+void _builtInConnectionTests() {
+  const built = SupabaseConfig(url: 'https://built.test', anonKey: 'pk', email: 'reader@x.test', password: 'pw');
+
+  group('SupabaseConfig.load with a connection built into the app', () {
+    test('a device with nothing saved uses the built-in connection', () async {
+      SharedPreferences.setMockInitialValues({});
+      final c = SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built);
+      expect(c.complete, isTrue);
+      expect(c.url, 'https://built.test');
+    });
+
+    test('what the user saved wins over the built-in connection', () async {
+      SharedPreferences.setMockInitialValues({'c_url': 'https://mine.test', 'c_key': 'k', 'c_mail': 'a@b.test', 'c_pass': 'p'});
+      final c = SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built);
+      expect((c.url, c.email), ('https://mine.test', 'a@b.test'));
+    });
+
+    test('a saved disconnect (blank values) stays in demo mode', () async {
+      SharedPreferences.setMockInitialValues({'c_url': '', 'c_key': '', 'c_mail': '', 'c_pass': ''});
+      expect(SupabaseConfig.load(await SharedPreferences.getInstance(), fallback: built).complete, isFalse);
+    });
+
+    test('a plain build has no built-in connection', () {
+      expect(SupabaseConfig.builtIn.complete, isFalse);
+    });
+  });
+}
 
 http.Response _json(Object body, [int status = 200]) => http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
 
@@ -51,6 +80,7 @@ MockClient _server({List<http.Request>? seen, bool badLogin = false, int quoteSt
 }
 
 void main() {
+  _builtInConnectionTests();
   test('load signs in once and reads every table for the market', () async {
     final seen = <http.Request>[];
     final repo = SupabaseRepository(_cfg, client: _server(seen: seen));
