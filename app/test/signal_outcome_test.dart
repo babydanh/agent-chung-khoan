@@ -44,7 +44,7 @@ void main() {
   test('TC-OUT-04: the summary line is plain, passes the advice scanner and is empty when nothing can be measured', () {
     final line = outcomeLine(const Outcomes(up: 3, down: 2, flat: 1));
     expect(line, 'Sau 1 phiên (6 ngày có tín hiệu): giá tăng 3, giảm 2, đi ngang 1. Chỉ là quá khứ.');
-    expect(findBanned(line), isEmpty);
+    expect(findBanned(line!), isEmpty);
     expect(outcomeLine(const Outcomes(up: 0, down: 0, flat: 0)), isNull);
   });
 }
