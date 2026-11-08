@@ -143,6 +143,20 @@ class NewsItem {
       );
 }
 
+/// The bot's note on one headline (table news_notes, found by the headline link): the kind of story, what such stories
+/// usually touch, a lean (pos / neg / unclear: a guess) and the one-sentence reason behind the lean.
+class NewsNote {
+  const NewsNote({required this.kind, this.aspect = '', this.outlook = 'unclear', this.note = ''});
+  final String kind, aspect, outlook, note;
+
+  factory NewsNote.fromJson(Map<String, dynamic> j) => NewsNote(
+        kind: (j['kind'] as String?) ?? 'other',
+        aspect: (j['aspect'] as String?) ?? '',
+        outlook: (j['outlook'] as String?) ?? 'unclear',
+        note: (j['note'] as String?) ?? '',
+      );
+}
+
 class DailyBar {
   const DailyBar({required this.date, required this.close, this.vol = 0});
   final DateTime date;
@@ -165,6 +179,7 @@ class MarketData {
     this.zones = const [],
     this.digests = const [],
     this.news = const [],
+    this.notes = const {},
     this.status = const BotStatus(),
     this.asof,
   });
@@ -174,6 +189,7 @@ class MarketData {
   final List<Zone> zones;
   final List<Digest> digests;
   final List<NewsItem> news;
+  final Map<String, NewsNote> notes; // by headline link
   final BotStatus status;
   final DateTime? asof;
 

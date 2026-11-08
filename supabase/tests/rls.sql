@@ -50,6 +50,7 @@ insert into public.heartbeat values ('VN', 'engine', now(), null);
 insert into public.snapshot_compact values ('VN', now(), '{}');
 insert into public.digests (market, digest_date, kind, body) values ('VN', current_date, 'close', 'x'), ('US', current_date, 'close', 'x');
 insert into public.news (market, title, url, published_at) values ('VN', 't', 'https://example.test/1', now()), ('US', 't', 'https://example.test/us', now());
+insert into public.news_notes (url, market, kind, outlook) values ('https://example.test/1', 'VN', 'earnings', 'pos'), ('https://example.test/us', 'US', 'other', 'unclear');
 insert into public.watchlists (user_id, market, symbol) values
   ('aaaaaaaa-0000-0000-0000-00000000000a', 'VN', 'AAA'), ('bbbbbbbb-0000-0000-0000-00000000000b', 'VN', 'BBB');
 insert into public.prefs (user_id) values ('aaaaaaaa-0000-0000-0000-00000000000a'), ('bbbbbbbb-0000-0000-0000-00000000000b');
@@ -114,10 +115,10 @@ declare r record; t text;
 begin
   for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
            where n.nspname = 'public' and c.relkind in ('r', 'p', 'v')
-             and c.relname not in ('quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news') loop
+             and c.relname not in ('quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news', 'news_notes') loop
     if public._t_count('public.' || quote_ident(r.relname)) <> 0 then raise exception 'anon can read %', r.relname; end if;
   end loop;
-  foreach t in array array['quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news'] loop
+  foreach t in array array['quotes_latest', 'snapshot_meta', 'signals', 'bars_1d', 'zones', 'digests', 'news', 'news_notes'] loop
     if public._t_count('public.' || t || ' where market = ''VN''') < 1 then raise exception 'anon cannot read the VN rows of %', t; end if;
     if public._t_count('public.' || t || ' where market = ''US''') <> 0 then raise exception 'anon reads US rows of %', t; end if;
     if public._t_exec('delete from public.' || t) > -1 then raise exception 'anon can delete from %', t; end if;
@@ -167,11 +168,13 @@ begin
   if public._t_count('public.digests where market = ''US''') <> 0 then raise exception 'A reads US digests'; end if;
   if public._t_count('public.news where market = ''VN''') <> 1 then raise exception 'A cannot read VN news'; end if;
   if public._t_count('public.news where market = ''US''') <> 0 then raise exception 'A reads US news'; end if;
+  if public._t_count('public.news_notes where market = ''VN''') <> 1 then raise exception 'A cannot read VN news_notes'; end if;
+  if public._t_count('public.news_notes where market = ''US''') <> 0 then raise exception 'A reads US news_notes'; end if;
 
   -- the owner check is evaluated once per query (InitPlan), not once per row (a correlated SubPlan)
   declare t text; plan text;
   begin
-    foreach t in array array['signals', 'quotes_latest', 'bars_1d', 'zones', 'digests', 'news'] loop
+    foreach t in array array['signals', 'quotes_latest', 'bars_1d', 'zones', 'digests', 'news', 'news_notes'] loop
       plan := public._t_plan('select * from public.' || t);
       if plan !~ 'InitPlan' or plan ~ '(?<!Init)SubPlan' then raise exception 'policy on % does not use an InitPlan for the owner check: %', t, plan; end if;
     end loop;
@@ -190,6 +193,8 @@ begin
   if public._t_exec('delete from public.digests') > 0 then raise exception 'A deleted digests'; end if;
   if public._t_exec('insert into public.news (market, title, url, published_at) values (''VN'', ''t'', ''https://example.test/2'', now())') > 0 then raise exception 'A inserted news'; end if;
   if public._t_exec('update public.news set title = ''y''') > 0 or public._t_exec('delete from public.news') > 0 then raise exception 'A changed news'; end if;
+  if public._t_exec('insert into public.news_notes (url, market, kind, outlook) values (''https://example.test/2'', ''VN'', ''other'', ''pos'')') > 0 then raise exception 'A inserted news_notes'; end if;
+  if public._t_exec('update public.news_notes set note = ''y''') > 0 or public._t_exec('delete from public.news_notes') > 0 then raise exception 'A changed news_notes'; end if;
   if public._t_exec('insert into public.zones (market, symbol, kind, price_lo, price_hi, asof) values (''VN'', ''X'', ''support'', 1, 2, now())') > 0 then raise exception 'A inserted zones'; end if;
   if public._t_exec('update public.zones set kind = ''y''') > 0 or public._t_exec('delete from public.zones') > 0 then raise exception 'A changed zones'; end if;
   if public._t_exec('insert into public.snapshot_meta (market, asof, slot_start, symbols, signals) values (''VN'', now() + interval ''1 hour'', now() + interval ''1 hour'', 1, 0)') > 0 then raise exception 'A inserted snapshot_meta'; end if;
@@ -219,7 +224,7 @@ begin
   if public._t_count('public.quotes_latest') <> 2 then raise exception 'owner cannot read US quotes'; end if;
   if public._t_count('public.signals') <> 2 then raise exception 'owner cannot read US signals'; end if;
   if public._t_count('public.bars_1d') <> 2 or public._t_count('public.zones') <> 2 then raise exception 'owner cannot read US bars_1d/zones'; end if;
-  if public._t_count('public.digests') <> 2 or public._t_count('public.news') <> 2 then raise exception 'owner cannot read US digests/news'; end if;
+  if public._t_count('public.digests') <> 2 or public._t_count('public.news') <> 2 or public._t_count('public.news_notes') <> 2 then raise exception 'owner cannot read US digests/news/news_notes'; end if;
   if public._t_count('public.watchlists') <> 0 then raise exception 'owner reads other users watchlists'; end if;
   if public._t_count('public.app_owners') <> 0 then raise exception 'owner reads app_owners directly'; end if;
   if public._t_exec('update public.quotes_latest set price = 1') > 0 then raise exception 'owner updated quotes_latest'; end if;

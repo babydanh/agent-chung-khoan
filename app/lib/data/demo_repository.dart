@@ -65,6 +65,24 @@ class DemoRepository implements Repository {
         NewsItem(title: 'Hoà Phát: sản lượng thép tháng 10 tăng 9% so với cùng kỳ', url: 'https://vietstock.vn', source: 'Vietstock', symbol: 'HPG', publishedAt: stamp.subtract(const Duration(minutes: 30))),
         NewsItem(title: 'Vinamilk công bố lịch chia cổ tức tiền mặt', url: 'https://vnexpress.net', source: 'VnExpress', symbol: 'VNM', publishedAt: stamp.subtract(const Duration(hours: 1))),
       ],
+      notes: const {
+        'https://cafef.vn': NewsNote(
+          kind: 'contract',
+          aspect: 'Tin hợp đồng, dự án thường liên quan tới nguồn việc và doanh thu của các kỳ sau.',
+          outlook: 'pos',
+          note: 'Hợp đồng mới cho thấy doanh nghiệp có thêm nguồn việc.',
+        ),
+        'https://vietstock.vn': NewsNote(
+          kind: 'earnings',
+          aspect: 'Tin kết quả kinh doanh thường liên quan tới doanh thu, lợi nhuận và sức khỏe tài chính của doanh nghiệp.',
+          outlook: 'pos',
+          note: 'Sản lượng cao hơn cùng kỳ cho thấy hoạt động sản xuất cải thiện.',
+        ),
+        'https://vnexpress.net': NewsNote(
+          kind: 'dividend',
+          aspect: 'Tin cổ tức thường liên quan tới phần lợi ích cổ đông nhận được và chính sách giữ lại vốn.',
+        ),
+      },
     );
   }
 

@@ -72,7 +72,37 @@ Story _story(String title, {String event = 'earnings', List<String> symbols = co
       cluster: 'c$title',
     );
 
+NewsItem _row(String title, String url, String symbol, DateTime? at) => NewsItem(title: title, url: url, source: 'CafeF', symbol: symbol, publishedAt: at);
+
 void main() {
+  group('headlines of one symbol', () {
+    final t = DateTime.utc(2026, 11, 9, 3);
+
+    test('TC-HEAD-01: stored rows and the stories this phone read are merged, one per link, newest first', () async {
+      final data = MarketData(quotes: [_q('AAA')], news: [_row('Bảng cũ', 'https://x.test/old', 'AAA', t.subtract(const Duration(hours: 5))), _row('Mã khác', 'https://x.test/b', 'BBB', t)]);
+      final s = await _state(repo: FakeRepo(data));
+      s.stories = [
+        Story(head: Headline(title: 'Của máy', link: 'https://x.test/new', source: 'Vietstock', published: t, symbols: const ['AAA', 'BBB']), event: eventByKey('earnings'), sources: 1, cluster: 'c1'),
+        Story(head: Headline(title: 'Trùng bảng', link: 'https://x.test/old', source: 'CafeF', published: t.subtract(const Duration(hours: 5)), symbols: const ['AAA']), event: eventByKey('other'), sources: 1, cluster: 'c2'),
+        Story(head: Headline(title: 'Không nhắc mã', link: 'https://x.test/none', source: 'CafeF', published: t, symbols: const ['CCC']), event: eventByKey('other'), sources: 1, cluster: 'c3'),
+      ];
+      expect(s.headlinesOf(Market.vn, 'AAA').map((n) => n.title), ['Của máy', 'Bảng cũ']);
+      expect(s.headlinesOf(Market.vn, 'AAA').first.symbol, 'AAA');
+    });
+
+    test('TC-HEAD-02: US reads only the stored rows (the feeds are Vietnamese)', () async {
+      final s = await _state();
+      s.data[Market.us] = MarketData(news: [_row('Mỹ', 'https://x.test/us', 'NVDA', t)]);
+      s.stories = [_story('Của máy', symbols: const ['NVDA'])];
+      expect(s.headlinesOf(Market.us, 'NVDA').map((n) => n.title), ['Mỹ']);
+    });
+
+    test('TC-HEAD-03: a headline without a time is kept and goes last', () async {
+      final s = await _state(repo: FakeRepo(MarketData(quotes: [_q('AAA')], news: [_row('Không giờ', 'https://x.test/1', 'AAA', null), _row('Có giờ', 'https://x.test/2', 'AAA', t)])));
+      expect(s.headlinesOf(Market.vn, 'AAA').map((n) => n.title), ['Có giờ', 'Không giờ']);
+    });
+  });
+
   test('board sorts by level then volume', () async {
     final s = await _state();
     expect(s.board().map((q) => q.symbol), ['BBB', 'CCC', 'AAA']);

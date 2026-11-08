@@ -73,7 +73,7 @@ void _builtInConnectionTests() {
 http.Response _json(Object body, [int status = 200]) => http.Response(jsonEncode(body), status, headers: {'content-type': 'application/json'});
 
 /// A fake server that answers the auth call and the table reads the app makes.
-MockClient _server({List<http.Request>? seen, bool badLogin = false, int quoteStatus = 200, int quotePages = 1}) {
+MockClient _server({List<http.Request>? seen, bool badLogin = false, int quoteStatus = 200, int quotePages = 1, int notesStatus = 200}) {
   var logins = 0;
   return MockClient((req) async {
     seen?.add(req);
@@ -102,6 +102,9 @@ MockClient _server({List<http.Request>? seen, bool badLogin = false, int quoteSt
         return _json([{'digest_date': '2026-11-05', 'kind': 'slot-0930', 'body': 'Mức 3: FPT', 'created_at': '2026-11-05T02:30:00+00:00'}]);
       case '/rest/v1/news':
         return _json([{'title': 'FPT ký hợp đồng', 'url': 'https://cafef.vn/x', 'source': 'CafeF', 'symbol': 'FPT', 'published_at': '2026-11-05T02:00:00+00:00'}]);
+      case '/rest/v1/news_notes':
+        if (notesStatus != 200) return _json({}, notesStatus);
+        return _json([{'url': 'https://cafef.vn/x', 'kind': 'contract', 'aspect': 'A.', 'outlook': 'pos', 'note': 'B.'}]);
       case '/rest/v1/snapshot_meta':
         return _json([{'asof': '2026-11-05T02:00:00+00:00'}]);
       case '/rest/v1/bars_1d':
@@ -126,6 +129,23 @@ void main() {
     expect(seen.where((r) => r.url.path == '/auth/v1/token').length, 1);
     expect(seen.where((r) => r.url.path.startsWith('/rest/v1/')).every((r) => r.method == 'GET'), isTrue, reason: 'the app only reads');
     expect(seen.where((r) => r.url.path == '/rest/v1/quotes_latest').single.url.queryParameters['market'], 'eq.VN');
+  });
+
+  test('TC-NNOTE-07: the notes on headlines are read by link, for the market asked', () async {
+    final seen = <http.Request>[];
+    final d = await SupabaseRepository(_cfg, client: _server(seen: seen)).load(Market.vn);
+    expect(d.notes['https://cafef.vn/x']!.kind, 'contract');
+    expect(d.notes['https://cafef.vn/x']!.outlook, 'pos');
+    expect(seen.where((r) => r.url.path == '/rest/v1/news_notes').single.url.queryParameters['market'], 'eq.VN');
+  });
+
+  test('TC-NNOTE-08: the notes are optional: a missing table or a server error leaves the prices and the news intact', () async {
+    for (final status in [404, 500]) {
+      final d = await SupabaseRepository(_cfg, client: _server(notesStatus: status)).load(Market.vn);
+      expect(d.notes, isEmpty, reason: '$status');
+      expect(d.quotes.single.symbol, 'FPT');
+      expect(d.news.single.symbol, 'FPT');
+    }
   });
 
   test('a wrong password is an auth error, not a network error', () async {

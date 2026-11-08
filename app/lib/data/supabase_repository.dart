@@ -98,6 +98,19 @@ class SupabaseRepository implements Repository {
     }
   }
 
+  /// The bot's notes on headlines, by link. Optional: a missing table (an older database) or a failed read leaves the
+  /// notes empty instead of hiding the prices.
+  Future<Map<String, NewsNote>> _notes(String market) async {
+    try {
+      final rows = await _select('news_notes', {
+        'market': market, 'select': 'url,kind,aspect,outlook,note', 'order': 'created_at.desc', 'limit': '300',
+      });
+      return {for (final r in rows) if (r['url'] is String) r['url'] as String: NewsNote.fromJson(r)};
+    } on Exception {
+      return const {};
+    }
+  }
+
   @override
   Future<MarketData> load(Market market) async {
     final m = 'eq.${market.key}';
@@ -123,6 +136,7 @@ class SupabaseRepository implements Repository {
     final news = await _select('news', {
       'market': m, 'select': 'title,url,source,symbol,published_at', 'order': 'published_at.desc', 'limit': '100',
     });
+    final notes = await _notes(m);
     final meta = await _select('snapshot_meta', {
       'market': m, 'select': 'asof,slot_start,symbols,signals', 'order': 'asof.desc', 'limit': '1',
     });
@@ -133,6 +147,7 @@ class SupabaseRepository implements Repository {
       zones: [for (final r in zoneRows) if (r['asof'] == newest) Zone.fromJson(r)],
       digests: [for (final r in digests) Digest.fromJson(r)],
       news: [for (final r in news) NewsItem.fromJson(r)],
+      notes: notes,
       status: BotStatus(lastSnapshot: meta.isEmpty ? null : DateTime.tryParse('${meta.first['asof']}')?.toLocal()),
       asof: asof == null ? null : DateTime.tryParse(asof)?.toLocal(),
     );
