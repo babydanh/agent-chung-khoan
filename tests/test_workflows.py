@@ -129,6 +129,15 @@ class WeekendWorkflowTest(unittest.TestCase):
         self.assertEqual(sorted((d, tz) for _, _, d, tz in found), [("0", "Asia/Ho_Chi_Minh"), ("6", "Asia/Ho_Chi_Minh")])
         self.assertEqual(len(re.findall(r"- cron:", t)), 2)
 
+    def test_it_refreshes_the_last_close_after_the_bulletin(self):  # TC-REFRESH-05
+        t = read("weekend.yml")
+        self.assertIn("python3 -m pipeline.run --market VN --refresh-quotes", t)
+        self.assertLess(t.index("pipeline.bulletin"), t.index("--refresh-quotes"))
+        i = t.index("--refresh-quotes")
+        step = t[t.rfind("- name:", 0, i):i]
+        self.assertIn("SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}", step)
+        self.assertNotIn("APCA", t, "the weekend refresh is VN only")
+
     def test_it_runs_the_vn_weekend_bulletin_and_needs_no_model_credentials(self):
         t = read("weekend.yml")
         self.assertIn("python3 -m pipeline.bulletin --market VN --weekend", t)

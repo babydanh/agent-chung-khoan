@@ -42,6 +42,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: python3 -m pipeline.bulletin --market VN --weekend
+      - name: Refresh the last close (quotes only, so the app has prices to show)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 -m pipeline.run --market VN --refresh-quotes
       - name: Alert on failure
         if: failure()
         env:

@@ -474,3 +474,63 @@ class LateRunTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SUNDAY = datetime(2026, 11, 8, 7, 0, tzinfo=UTC)  # 14:00 Sunday in Ho Chi Minh
+MONDAY_OPEN = datetime(2026, 11, 9, 2, 20, tzinfo=UTC)  # 09:20 Monday: the first run of the week
+
+
+def refresh(db, rows, now=SUNDAY, symbols=SYMS):
+    """Run `--refresh-quotes` with a fake feed; returns (exit code, how many times the feed was asked)."""
+    asked = []
+
+    def fetch(syms):
+        asked.append(1)
+        return {k: {"SB": k, "SRC": "KBS", **v} for k, v in rows.items()}
+    with FakeServer(db) as s:
+        code = main(["--market", "VN", "--refresh-quotes"], env_for(s.url), now=now, fetch=fetch, symbols=symbols,
+                    sleep=lambda x: None)
+    assert not db.violations, db.violations
+    return code, len(asked)
+
+
+class RefreshQuotesTest(unittest.TestCase):
+    """TC-REFRESH: outside the run window the last close can be put into quotes_latest so the app has prices to show."""
+
+    def test_the_weekend_close_is_written_to_quotes_and_nothing_else(self):  # TC-REFRESH-01
+        db = FakeDB()
+        code, asked = refresh(db, {s: board() for s in SYMS})
+        self.assertEqual((code, asked), (0, 1))
+        self.assertEqual(sorted(q["symbol"] for q in db.rows("quotes_latest")), SYMS)
+        self.assertEqual(db.rows("quotes_latest")[0]["asof"], SUNDAY.isoformat())
+        for table in ("snapshot_meta", "bars_30m", "signals", "heartbeat"):
+            self.assertEqual(db.rows(table), [], table)
+
+    def test_inside_the_run_window_it_does_nothing(self):  # TC-REFRESH-02
+        db = FakeDB()
+        code, asked = refresh(db, {s: board() for s in SYMS}, now=NOW)
+        self.assertEqual((code, asked, db.rows("quotes_latest")), (0, 0, []))
+
+    def test_a_feed_with_too_few_live_symbols_writes_nothing(self):  # TC-REFRESH-03
+        db = FakeDB()
+        code, _ = refresh(db, {"AAA": board()}, symbols=["AAA", "BBB", "CCC", "DDD"])  # 1 of 4 is below half
+        self.assertEqual((code, db.rows("quotes_latest")), (1, []))
+
+    def test_no_source_answering_is_an_error(self):
+        from pipeline.sources.http import SourceError
+        db = FakeDB()
+
+        def down(syms):
+            raise SourceError("down")
+        with FakeServer(db) as s:
+            code = main(["--market", "VN", "--refresh-quotes"], env_for(s.url), now=SUNDAY, fetch=down, symbols=SYMS,
+                        sleep=lambda x: None)
+        self.assertEqual((code, db.rows("quotes_latest")), (1, []))
+
+    def test_the_first_run_after_a_refresh_still_counts_from_the_open(self):  # TC-REFRESH-04
+        db = FakeDB()
+        for s in SYMS:
+            db.put("quotes_latest", quote(s, vol=900_000_000, asof=SUNDAY.isoformat()))
+        code, _ = run(db, {s: board(TT=50_000) for s in SYMS}, now=MONDAY_OPEN)
+        self.assertEqual(code, 0)
+        self.assertEqual({b["vol"] for b in db.rows("bars_30m")}, {50_000})
