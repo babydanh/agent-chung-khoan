@@ -163,7 +163,17 @@ class AppState extends ChangeNotifier {
   Future<void> refreshAll() async {
     await load(Market.vn);
     await Future.wait([loadNews(), if (data.containsKey(Market.us) || market == Market.us) load(Market.us)]);
+    await askPermissionOnce();
     await notifyNow();
+  }
+
+  /// Android 13+ shows no notice without the permission, so the first start asks for it instead of waiting for a trip to
+  /// the settings. The flag is set before asking: a second refresh or a restart never prompts again.
+  Future<void> askPermissionOnce() async {
+    final n = notifier;
+    if (n == null || (_prefs.getBool('n_asked') ?? false)) return;
+    await _prefs.setBool('n_asked', true);
+    await allowNotifications();
   }
 
   Set<String> get _flowSymbols => {for (final r in of(Market.vn).signals.values) if (r.level >= 2) r.symbol};
