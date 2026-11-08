@@ -7,6 +7,7 @@ forecasts); a lean without a clean reason is shown as "unclear". A failure here 
 """
 import json
 import logging
+import re
 
 from pipeline import agent, guard, weekend
 from pipeline.banned import find_banned
@@ -75,9 +76,15 @@ def request_body(model, items):
     }
 
 
+# Plain words the number-word check would take for figures: "ngân hàng" reads as "ngàn" once accents are gone, "không" is
+# zero, "năm" is five or a year. A reason needs them ("không đạt kỳ vọng", "ngân hàng", "cả năm"); every other number word,
+# digit, unit, ticker, link and advice pattern is still checked.
+_EVERYDAY = re.compile(r"(?<!\w)(ngân hàng|không|năm)(?!\w)", re.I)
+
+
 def _reason_ok(reason):
     return (isinstance(reason, str) and len(reason) <= NOTE_MAX
-            and guard.check_paragraph(reason, set(), set())[0])
+            and guard.check_paragraph(_EVERYDAY.sub(" ", reason), set(), set())[0])
 
 
 def clean(raw, items):

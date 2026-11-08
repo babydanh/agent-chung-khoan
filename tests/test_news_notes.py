@@ -102,6 +102,20 @@ class CleanTest(unittest.TestCase):
         self.assertEqual(news_notes.ASPECT["other"], "")
 
 
+class EverydayWordsTest(unittest.TestCase):
+    def test_note_21_everyday_words_that_look_like_numbers_do_not_sink_a_reason_but_real_figures_still_do(self):
+        # "ngân hàng" reads as "ngàn" without accents, "không" is zero and "năm" is five or a year: all plain words here.
+        for reason in ("Kết quả kinh doanh không đạt kỳ vọng của thị trường.",
+                       "Ngân hàng tăng vốn điều lệ giúp nâng khả năng cho vay.",
+                       "Hợp đồng mới mở thêm nguồn doanh thu cho cả năm sau."):
+            (row,) = news_notes.clean([note(1, outlook="neg", reason=reason)], [head(1)])
+            self.assertEqual((row["outlook"], row["note"]), ("neg", reason), reason)
+        for reason in ("Doanh thu tăng hai mươi phần trăm.", "Lãi tăng ba lần so với kỳ trước.", "Thu về năm trăm tỷ đồng.",
+                       "Nên mua vào ngay vì không còn cơ hội."):
+            (row,) = news_notes.clean([note(1, outlook="pos", reason=reason)], [head(1)])
+            self.assertEqual((row["outlook"], row["note"]), ("unclear", ""), reason)
+
+
 class AnnotateTest(unittest.TestCase):
     def test_note_09_rows_come_back_only_for_what_the_model_answered(self):
         rows, reqs = go(lambda *a: reply([note(1), note(2, "legal", "neg", "Tin liên quan đến rủi ro của doanh nghiệp.")]),
