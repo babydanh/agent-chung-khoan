@@ -64,7 +64,7 @@ class BotSwitchTest(unittest.TestCase):
         return re.split(r"\n  (?=[a-z][\w-]*:\n)", text[i + len("\njobs:\n"):])
 
     def test_every_scheduled_job_is_behind_the_switch(self):
-        for n in ("snap-vn.yml", "snap-us.yml", "eod.yml"):
+        for n in ("snap-vn.yml", "snap-us.yml", "eod.yml", "weekend.yml"):
             for job in self.jobs(read(n)):
                 head = job.split("steps:")[0]
                 self.assertIn(self.GUARD, head, f"{n}: {job.splitlines()[0]}")
@@ -120,8 +120,24 @@ class AppBuiltInConnectionTest(unittest.TestCase):
             self.assertNotIn(word, t, word)
 
 
+class WeekendWorkflowTest(unittest.TestCase):
+    """TC-WEEKEND-09: the weekend bulletin runs on Saturday and Sunday only, written by code, with no model credentials."""
+
+    def test_it_runs_only_on_saturday_and_sunday_in_vietnam_time(self):
+        t = read("weekend.yml")
+        found = re.findall(r'- cron: "(\d+) (\d+) \* \* (\d)"\s+timezone: "([^"]+)"', t)
+        self.assertEqual(sorted((d, tz) for _, _, d, tz in found), [("0", "Asia/Ho_Chi_Minh"), ("6", "Asia/Ho_Chi_Minh")])
+        self.assertEqual(len(re.findall(r"- cron:", t)), 2)
+
+    def test_it_runs_the_vn_weekend_bulletin_and_needs_no_model_credentials(self):
+        t = read("weekend.yml")
+        self.assertIn("python3 -m pipeline.bulletin --market VN --weekend", t)
+        for word in ("ANTHROPIC", "CLAUDE", "claude-code"):
+            self.assertNotIn(word, t, word)
+
+
 class FailureAlertTest(unittest.TestCase):
-    NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml")
+    NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "weekend.yml")
 
     def step(self, text, title):
         i = text.index(f"- name: {title}")
@@ -178,18 +194,18 @@ class EodJobTest(unittest.TestCase):
 
 
 class AllWorkflowsTest(unittest.TestCase):
-    NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "ci.yml")
+    NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "weekend.yml", "ci.yml")
 
     def test_least_privilege_and_manual_trigger(self):
         for n in self.NAMES:
             t = read(n)
             self.assertRegex(t, r"permissions:\s+contents: read", n)
             self.assertNotRegex(t, r"contents: write|id-token|write-all", n)
-        for n in self.NAMES[:3]:
+        for n in self.NAMES[:4]:
             self.assertIn("workflow_dispatch:", read(n), n)
 
     def test_scheduled_workflows_do_not_overlap_themselves(self):
-        for n in self.NAMES[:3]:
+        for n in self.NAMES[:4]:
             t = read(n)
             self.assertIn("concurrency:", t, n)
             self.assertIn("cancel-in-progress: false", t, n)
@@ -204,7 +220,8 @@ class AllWorkflowsTest(unittest.TestCase):
     def test_secrets_come_from_the_secrets_context_and_missing_ones_fail_the_run(self):
         for n, names in (("snap-vn.yml", ["SUPABASE_URL", "SUPABASE_SECRET_KEY"]),
                          ("snap-us.yml", ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "APCA_API_KEY_ID", "APCA_API_SECRET_KEY"]),
-                         ("eod.yml", ["SUPABASE_URL", "SUPABASE_SECRET_KEY"])):
+                         ("eod.yml", ["SUPABASE_URL", "SUPABASE_SECRET_KEY"]),
+                         ("weekend.yml", ["SUPABASE_URL", "SUPABASE_SECRET_KEY"])):
             t = read(n)
             for s in names:
                 self.assertIn(f"{s}: ${{{{ secrets.{s} }}}}", t, (n, s))
