@@ -22,8 +22,14 @@ def fake_make(items, news, api_key, time_text, **kw):
 fake_make.calls = []
 
 
-def handler(signal_rows):
+def no_notes(headlines, seen, key, token):
+    return []
+
+
+def handler(signal_rows, noted=()):
     def h(method, path, headers, body):
+        if method == "GET" and "/news_notes" in path:
+            return 200, [{"url": u} for u in noted]
         if method == "GET" and "/signals" in path:
             if path.endswith("limit=1") or "limit=1&" in path:
                 return 200, [{"asof": ASOF}] if signal_rows else []
@@ -32,10 +38,10 @@ def handler(signal_rows):
     return h
 
 
-def run(rows, env=None, make=fake_make, text=lambda url: RSS, argv=("--market", "VN")):
-    with FakeServer(handler(rows)) as s:
+def run(rows, env=None, make=fake_make, text=lambda url: RSS, argv=("--market", "VN"), annotate=no_notes, noted=()):
+    with FakeServer(handler(rows, noted)) as s:
         env = {"SUPABASE_URL": s.url, "SUPABASE_SECRET_KEY": "k", "ANTHROPIC_API_KEY": "a", **(env or {})}
-        code = bulletin.main(list(argv), env, now=NOW, get_text=text, make=make, sleep=lambda x: None)
+        code = bulletin.main(list(argv), env, now=NOW, get_text=text, make=make, annotate=annotate, sleep=lambda x: None)
         return code, s.requests
 
 
@@ -115,3 +121,56 @@ class BulletinTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HeadlineNotesTest(unittest.TestCase):
+    """TC-NOTE-15..20: the bulletin job also notes the new headlines; the notes never decide whether the run is green."""
+
+    def setUp(self):
+        fake_make.calls.clear()
+        self.rows = [{"market": "VN", "asof": ASOF, "symbol": "HPG", "level": 2, "learning": False, "items": ITEMS[0]["signals"]}]
+        self.asked = []
+
+    def annotate(self, headlines, seen, key, token):
+        self.asked.append({"links": [h["link"] for h in headlines], "seen": set(seen), "key": key, "token": token})
+        return [{"url": h["link"], "kind": "earnings", "outlook": "pos", "aspect": "A.", "note": "Lý do."} for h in headlines]
+
+    def test_note_15_new_notes_are_stored_with_the_market_and_never_overwrite_older_ones(self):
+        code, reqs = run(self.rows, annotate=self.annotate, env={"CLAUDE_CODE_OAUTH_TOKEN": "tok"})
+        self.assertEqual(code, 0)
+        (n,) = posts(reqs, "news_notes")
+        self.assertIn("on_conflict=url", n["path"])
+        self.assertIn("ignore-duplicates", n["headers"]["prefer"])
+        self.assertEqual(n["body"], [{"url": "https://example.com/a", "kind": "earnings", "outlook": "pos", "aspect": "A.",
+                                      "note": "Lý do.", "market": "VN"}])
+        self.assertEqual((self.asked[0]["key"], self.asked[0]["token"]), ("a", "tok"))
+
+    def test_note_16_headlines_noted_in_the_last_days_are_not_sent_again(self):
+        _, reqs = run(self.rows, annotate=self.annotate, noted=["https://example.com/a"])
+        self.assertEqual(self.asked[0]["seen"], {"https://example.com/a"})
+        (q,) = [r for r in reqs if r["method"] == "GET" and "/news_notes" in r["path"]]
+        self.assertIn("market=eq.VN", q["path"])
+        self.assertIn("created_at=gte.2026-10-26T08%3A05%3A00%2B00%3A00", q["path"])  # four days back
+
+    def test_note_17_a_failing_annotator_does_not_fail_the_run_or_lose_the_bulletin(self):
+        def boom(*a):
+            raise RuntimeError("model down")
+        code, reqs = run(self.rows, annotate=boom)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(posts(reqs, "digests")), 1)
+        self.assertEqual(posts(reqs, "heartbeat")[0]["body"][0]["detail"]["notes"], 0)
+
+    def test_note_18_the_heartbeat_counts_the_notes_stored(self):
+        _, reqs = run(self.rows, annotate=self.annotate)
+        self.assertEqual(posts(reqs, "heartbeat")[0]["body"][0]["detail"]["notes"], 1)
+
+    def test_note_19_no_headlines_means_no_annotator_call_and_no_note_rows(self):
+        def boom(url):
+            raise OSError("down")
+        _, reqs = run(self.rows, annotate=self.annotate, text=boom)
+        self.assertEqual((self.asked, posts(reqs, "news_notes")), ([], []))
+
+    def test_note_20_a_stored_headline_carries_the_ticker_it_names(self):
+        _, reqs = run(self.rows)
+        (n,) = posts(reqs, "news")
+        self.assertEqual(n["body"][0]["symbol"], "HPG")  # the detail screen filters headlines by symbol

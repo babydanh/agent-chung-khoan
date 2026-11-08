@@ -99,36 +99,39 @@ def request_body(model, table, news):
     }
 
 
-def _paragraphs(text_or_obj):
+def _paragraphs(text_or_obj, key="paragraphs"):
     try:
         data = json.loads(text_or_obj) if isinstance(text_or_obj, str) else text_or_obj
     except ValueError as e:
         raise AgentError("reply is not JSON") from e
-    if not isinstance(data, dict) or not isinstance(data.get("paragraphs"), list):
+    if not isinstance(data, dict) or not isinstance(data.get(key), list):
         raise AgentError("reply does not match the schema")
-    return data["paragraphs"]
+    return data[key]
 
 
-def _call(body, api_key, url, **http):
+def _call(body, api_key, url, key="paragraphs", **http):
     resp = request_json(url, body, headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"}, **http)
     if not isinstance(resp, dict):
         raise AgentError("unexpected response")
     if resp.get("stop_reason") != "end_turn":
         raise AgentError(f"stop_reason={resp.get('stop_reason')}")
-    return _paragraphs("".join(b.get("text", "") for b in resp.get("content") or [] if b.get("type") == "text"))
+    return _paragraphs("".join(b.get("text", "") for b in resp.get("content") or [] if b.get("type") == "text"), key)
 
 
 def _call_cli(table, news, model, token):
-    """Same prompt through the unmodified `claude` CLI, signed in by CLAUDE_CODE_OAUTH_TOKEN (never on the command line).
+    return _cli_json("\n\n".join(_prompt_parts(table, news)), SCHEMA, SYSTEM, model, token)
+
+
+def _cli_json(prompt, schema, system, model, token, key="paragraphs"):
+    """The prompt through the unmodified `claude` CLI, signed in by CLAUDE_CODE_OAUTH_TOKEN (never on the command line).
 
     An empty ANTHROPIC_API_KEY is dropped from the environment: the CLI would prefer it over the token."""
-    cmd = ["claude", "-p", "--output-format", "json", "--json-schema", json.dumps(SCHEMA), "--tools", "",
-           "--no-session-persistence", "--system-prompt", SYSTEM, "--model", model]
+    cmd = ["claude", "-p", "--output-format", "json", "--json-schema", json.dumps(schema), "--tools", "",
+           "--no-session-persistence", "--system-prompt", system, "--model", model]
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     env["CLAUDE_CODE_OAUTH_TOKEN"] = token
     try:
-        done = subprocess.run(cmd, input="\n\n".join(_prompt_parts(table, news)), env=env, capture_output=True,
-                              text=True, timeout=CLI_TIMEOUT)
+        done = subprocess.run(cmd, input=prompt, env=env, capture_output=True, text=True, timeout=CLI_TIMEOUT)
         out = json.loads(done.stdout)
     except (OSError, subprocess.SubprocessError, ValueError) as e:
         raise AgentError(f"claude cli: {type(e).__name__}") from e
@@ -139,7 +142,7 @@ def _call_cli(table, news, model, token):
         if re.search(r"login|auth|token", msg, re.I):
             raise SourceError(msg, 401)  # the credentials are wrong: make the run red
         raise AgentError(f"claude cli: {msg}")
-    return _paragraphs(out["structured_output"] if "structured_output" in out else out.get("result"))
+    return _paragraphs(out["structured_output"] if "structured_output" in out else out.get("result"), key)
 
 
 def fallback_bulletin(table):

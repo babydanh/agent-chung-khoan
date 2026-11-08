@@ -13,7 +13,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from pipeline import agent, calendar, news, push, weekend
+from pipeline import agent, calendar, news, news_notes, push, weekend
 from pipeline.sources.http import SourceError, request_json
 from pipeline.supa import from_env
 
@@ -21,6 +21,7 @@ log = logging.getLogger("pipeline.bulletin")
 ROOT = Path(__file__).resolve().parent.parent
 JOB = "bulletin"
 MAX_SIGNAL_AGE = timedelta(hours=3)  # older signals belong to an earlier run, not to this bulletin
+NOTES_SEEN_AGE = timedelta(days=4)  # a headline noted within this window is not sent to the model again (feeds keep 3 days)
 WEEKEND_SIGNAL_AGE = timedelta(days=5)  # the weekend bulletin reports the last session, however long ago it closed
 
 
@@ -43,6 +44,24 @@ def _news(market, known, get_text, now):
         return []
 
 
+def _notes(db, market, headlines, env, now, annotate):
+    """Model notes on the headlines that have none yet; returns how many were stored. Optional: whatever goes wrong
+    here is logged and the bulletin goes on."""
+    if not headlines:
+        return 0
+    try:
+        since = (now - NOTES_SEEN_AGE).isoformat()
+        seen = {r["url"] for r in db.select_all("news_notes", {"market": "eq." + market, "select": "url", "created_at": "gte." + since},
+                                                order="url.asc")}
+        rows = annotate(headlines, seen, env.get("ANTHROPIC_API_KEY"), env.get("CLAUDE_CODE_OAUTH_TOKEN"))
+        if rows:
+            db.upsert("news_notes", [{**r, "market": market} for r in rows], "url", merge=False)  # first note of a headline stays
+        return len(rows)
+    except Exception:  # noqa: BLE001 - notes are an extra; they must never turn the bulletin job red
+        log.exception("headline notes not stored")
+        return 0
+
+
 def _weekend(db, market, now, local, known, get_text):
     """One digest per day, kind 'weekend', built by code from the last session's signals and the latest headlines."""
     paragraphs = weekend.build(_latest_items(db, market, now, WEEKEND_SIGNAL_AGE), _news(market, known, get_text, now))
@@ -51,7 +70,7 @@ def _weekend(db, market, now, local, known, get_text):
     log.info("weekend bulletin stored, %d lines", len(paragraphs))
 
 
-def main(argv, env, now=None, get_text=None, make=agent.make_bulletin, sleep=None):
+def main(argv, env, now=None, get_text=None, make=agent.make_bulletin, annotate=news_notes.annotate, sleep=None):
     ap = argparse.ArgumentParser(prog="pipeline.bulletin")
     ap.add_argument("--market", required=True, choices=("VN", "US"))
     ap.add_argument("--weekend", action="store_true")
@@ -82,16 +101,18 @@ def main(argv, env, now=None, get_text=None, make=agent.make_bulletin, sleep=Non
         items = _latest_items(db, market, now)
         headlines = _news(market, known, get_text, now)
         published = {n["id"]: n["published"] for n in headlines}  # the agent's news list does not carry the time
+        named = {n["id"]: (n.get("symbols") or [None])[0] for n in headlines}  # nor the ticker it names
         bulletin = make(items, headlines, env.get("ANTHROPIC_API_KEY"), f"{local:%H:%M}",
                         cli_token=env.get("CLAUDE_CODE_OAUTH_TOKEN"))
         db.upsert("digests", [{"market": market, "digest_date": local.date().isoformat(), "kind": f"slot-{local:%H%M}",
                                "body": "\n".join(bulletin["paragraphs"])}],
                   "market,digest_date,kind", merge=False)  # a rerun keeps the first bulletin of the slot
-        used = [{"market": market, "symbol": None, "title": n["title"], "url": n["link"], "source": n.get("source"),
+        used = [{"market": market, "symbol": named.get(n["id"]), "title": n["title"], "url": n["link"], "source": n.get("source"),
                  "published_at": published.get(n["id"])} for n in bulletin["news"] if published.get(n["id"])]
         if used:
             db.upsert("news", used, "url", merge=False)
-        detail = {**agent.heartbeat_detail(bulletin), "items": len(items), "push": push.build(market, now, now)}
+        noted = _notes(db, market, headlines, env, now, annotate)
+        detail = {**agent.heartbeat_detail(bulletin), "items": len(items), "notes": noted, "push": push.build(market, now, now)}
         db.upsert("heartbeat", [{"market": market, "job": JOB, "last_seen": now.isoformat(), "detail": detail}], "market,job")
     except SourceError as e:
         log.error("bulletin not stored: %s", e)
