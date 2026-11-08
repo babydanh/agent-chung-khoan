@@ -159,6 +159,23 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Headlines that name [symbol]: the rows the bot stored plus, for VN, the stories this phone read from the feeds.
+  /// One per link, newest first (a headline without a time goes last).
+  List<NewsItem> headlinesOf(Market m, String symbol) {
+    final out = [for (final n in of(m).news) if (n.symbol == symbol) n];
+    if (m == Market.vn) {
+      final seen = {for (final n in out) n.url};
+      for (final st in stories) {
+        final h = st.head;
+        if (h.symbols.contains(symbol) && seen.add(h.link)) {
+          out.add(NewsItem(title: h.title, url: h.link, source: h.source, symbol: symbol, publishedAt: h.published));
+        }
+      }
+    }
+    out.sort((a, b) => (b.publishedAt ?? DateTime(1970)).compareTo(a.publishedAt ?? DateTime(1970)));
+    return out;
+  }
+
   /// Data, headlines, then notifications: what the refresh gesture and the first start do.
   Future<void> refreshAll() async {
     await load(Market.vn);

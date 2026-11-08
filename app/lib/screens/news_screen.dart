@@ -8,7 +8,9 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
+import '../util/news_note.dart';
 import '../widgets/common.dart';
+import '../widgets/news_note_view.dart';
 import 'board_screen.dart';
 import 'detail_screen.dart';
 
@@ -62,8 +64,8 @@ class _NewsScreenState extends State<NewsScreen> {
               if (stories.isEmpty && news.isEmpty)
                 const SizedBox(height: 260, child: EmptyState('news', 'Chưa có tin'))
               else ...[
-                for (final st in stories) ...[StoryTile(st, hot: s.isHot(st), flow: s.flowMatch(st)), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
-                for (final n in news) ...[NewsTile(n), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
+                for (final st in stories) ...[StoryTile(st, hot: s.isHot(st), flow: s.flowMatch(st), note: d.notes[st.head.link]), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
+                for (final n in news) ...[NewsTile(n, note: d.notes[n.url]), Divider(height: 1, indent: Sp.s4, endIndent: Sp.s4, color: c.line)],
               ],
             ]),
           ),
@@ -165,14 +167,16 @@ class DigestDetail extends StatelessWidget {
 
 /// A ranked story: title, event, symbols, source and time, with "Nóng" and "Khớp" flags.
 class StoryTile extends StatelessWidget {
-  const StoryTile(this.story, {super.key, required this.hot, required this.flow});
+  const StoryTile(this.story, {super.key, required this.hot, required this.flow, this.note});
   final Story story;
   final bool hot, flow;
+  final NewsNote? note; // the bot's note on the head headline, if it wrote one
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final h = story.head;
+    final shown = shownNote(note);
     final vnTime = h.published?.toUtc().add(const Duration(hours: 7));
     return Semantics(
       button: true,
@@ -197,6 +201,7 @@ class StoryTile extends StatelessWidget {
               Expanded(child: Text('${story.sources > 1 ? '${story.sources} nguồn · ' : ''}${h.source} · ${f.hhmm(vnTime)}', style: AppText.num(c.text2, size: Ts.xs, weight: FontWeight.w400))),
               AppIcon('ext', size: 16, color: c.text3),
             ]),
+            if (shown != null) NewsNoteView(shown, showKind: false), // the story already shows its event tag
           ]),
         ),
       ),

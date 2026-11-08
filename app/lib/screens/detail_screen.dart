@@ -7,10 +7,12 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
+import '../util/news_note.dart';
 import '../util/signal_outcome.dart';
 import '../widgets/common.dart';
 import '../widgets/chart_marks.dart';
 import '../widgets/line_chart.dart';
+import '../widgets/news_note_view.dart';
 import '../widgets/price_bar.dart';
 
 const _tabs = ['Tổng quan', 'Dòng tiền', 'Lịch sử', 'Vùng', 'Tin'];
@@ -108,7 +110,7 @@ class _DetailScreenState extends State<DetailScreen> {
             1 => _flow(context, q),
             2 => _historyTab(context),
             3 => _zones(context, q, s.of(m).zonesOf(q.symbol)),
-            _ => _news(context, s.of(m).news.where((n) => n.symbol == q.symbol).toList()),
+            _ => _news(context, s.headlinesOf(m, q.symbol)),
           })),
         ]),
       ),
@@ -120,7 +122,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final vn = q.market == Market.vn;
     final days = _range == '1T' ? 7 : _range == '1M' ? 30 : 90;
     final bars = _bars == null ? const <DailyBar>[] : _bars!.sublist((_bars!.length - days).clamp(0, _bars!.length));
-    final headlines = [for (final n in AppScope.of(context).of(q.market).news) if (n.symbol == q.symbol) n];
+    final headlines = AppScope.of(context).headlinesOf(q.market, q.symbol);
     final marks = groupByBar(bars, [...signalMarks(_history ?? const []), ...newsMarks(headlines)]);
     return [
       PriceBar(q),
@@ -176,6 +178,7 @@ class _DetailScreenState extends State<DetailScreen> {
   /// What the signals and headlines of one day said. Only reports what happened.
   void _showDay(BuildContext context, DayMarks day) {
     final c = context.c;
+    final notes = AppScope.of(context).of(widget.market).notes;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: c.surface,
@@ -190,7 +193,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
             for (final m in day.marks)
               if (m.kind == MarkKind.news)
-                NewsTile(NewsItem(title: m.title, url: m.url ?? '', source: m.detail ?? '', symbol: widget.symbol, publishedAt: m.at))
+                NewsTile(NewsItem(title: m.title, url: m.url ?? '', source: m.detail ?? '', symbol: widget.symbol, publishedAt: m.at), note: notes[m.url])
               else
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Sp.s4, vertical: Sp.s2),
@@ -346,7 +349,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   List<Widget> _news(BuildContext context, List<NewsItem> items) {
     if (items.isEmpty) return [const SizedBox(height: 240, child: EmptyState('news', 'Chưa có tin'))];
-    return [for (final n in items.take(10)) NewsTile(n)];
+    final notes = AppScope.of(context).of(widget.market).notes;
+    return [for (final n in items.take(10)) NewsTile(n, note: notes[n.url])];
   }
 
   void _learning(BuildContext context, SignalRow? sig) {
@@ -370,12 +374,14 @@ class _DetailScreenState extends State<DetailScreen> {
 }
 
 class NewsTile extends StatelessWidget {
-  const NewsTile(this.item, {super.key});
+  const NewsTile(this.item, {super.key, this.note});
   final NewsItem item;
+  final NewsNote? note; // the bot's note on this headline, if it wrote one
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final shown = shownNote(note);
     return Semantics(
       button: true,
       child: InkWell(
@@ -394,6 +400,7 @@ class NewsTile extends StatelessWidget {
               const Spacer(),
               AppIcon('ext', size: 16, color: c.text3),
             ]),
+            if (shown != null) NewsNoteView(shown),
           ]),
         ),
       ),
