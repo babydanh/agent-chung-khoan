@@ -239,6 +239,46 @@ class FallbackReasonTest(unittest.TestCase):
         self.assertNotIn("SECRETVALUE", " ".join(cm.output) + out["reason"])
 
 
+class WatchPointTest(unittest.TestCase):
+    """Code names what to keep an eye on (never a forecast); the model only words the sentence around it."""
+
+    def test_each_symbol_gets_code_made_watch_text_from_its_signals(self):  # TC-WATCH-01
+        t = build_table(ITEMS, "09:50")
+        self.assertIn("giao dịch thỏa thuận", t["WATCH1"])  # VCB: S3
+        self.assertIn("giá có giữ được", t["WATCH1"])  # VCB: S4 up
+        self.assertIn("khối lượng", t["WATCH2"])  # HPG: S1
+        self.assertIn("khối ngoại có tiếp tục mua ròng", t["WATCH2"])  # HPG: S2 buy
+        self.assertIn("khối ngoại có tiếp tục bán ròng", t["WATCH3"])  # FPT: S2 sell
+        for k in ("WATCH1", "WATCH2", "WATCH3"):
+            self.assertEqual(find_banned(t[k]), [], k)
+            self.assertFalse(any(c.isdigit() for c in t[k]), k)
+
+    def test_the_prompt_shows_the_model_what_each_watch_variable_stands_for(self):  # TC-WATCH-02
+        body = request_body(MODEL, build_table(ITEMS, "09:50"), NEWS)
+        facts = [b["text"] for b in body["messages"][0]["content"] if b["text"].startswith("Dữ kiện")][0]
+        self.assertIn("{WATCH1} = ", facts)
+        self.assertIn("{WATCH1}", body["messages"][0]["content"][0]["text"])  # allowed variable names
+        self.assertIn("WATCH", body["system"])
+
+    def test_a_model_sentence_using_a_watch_variable_is_kept_and_filled(self):  # TC-WATCH-03
+        good = [{"text": "Với {SYM1}, cần theo dõi {WATCH1}.", "news_ids": []}]
+        out, _ = go(lambda *a: reply(good))
+        self.assertEqual(out["source"], "ai")
+        self.assertTrue(out["paragraphs"][0].startswith("Với VCB, cần theo dõi "))
+        self.assertIn("giao dịch thỏa thuận", out["paragraphs"][0])
+
+    def test_the_model_cannot_add_its_own_condition_or_forecast(self):  # TC-WATCH-04
+        evil = [{"text": "Với {SYM1}, giá sắp tăng mạnh, cần theo dõi {WATCH1}.", "news_ids": []}]
+        out, _ = go(lambda *a: reply(evil))
+        self.assertEqual(out["source"], "fallback")
+
+    def test_the_code_built_bulletin_also_lists_what_to_watch(self):  # TC-WATCH-05
+        lines = fallback_bulletin(build_table(ITEMS, "09:50"))
+        self.assertIn("Cần theo dõi: ", lines[1])
+        self.assertTrue(lines[1].startswith("VCB: mức 3"))
+        self.assertEqual(find_banned("\n".join(lines)), [])
+
+
 class FallbackTest(unittest.TestCase):
     def test_fallback_is_built_by_code_from_the_table(self):
         lines = fallback_bulletin(build_table(ITEMS, "09:50"))
