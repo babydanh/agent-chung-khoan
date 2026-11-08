@@ -36,6 +36,15 @@ class FakeNotifier implements Notifier {
   Future<bool> requestPermission() async => true;
 }
 
+class CountingNotifier extends FakeNotifier {
+  int asks = 0;
+  @override
+  Future<bool> requestPermission() async {
+    asks++;
+    return true;
+  }
+}
+
 Quote _q(String s, {String ex = 'HOSE', double price = 110, double ref = 100, double vol = 1000, DateTime? asof}) =>
     Quote(market: Market.vn, symbol: s, exchange: ex, price: price, ref: ref, vol: vol, asof: asof);
 
@@ -210,6 +219,28 @@ void main() {
       final bare = await _state();
       expect(await bare.allowNotifications(), isFalse);
       await bare.sendTestNotice(); // no notifier: nothing happens, nothing throws
+    });
+
+    test('TC-NOTIFY-01: the first refresh asks for the notification permission, once', () async {
+      final n = CountingNotifier();
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final client = MockClient((_) async => http.Response('x', 503));
+      final s = AppState(prefs, repository: FakeRepo(_data()), notifier: n, httpClient: client);
+      await s.refreshAll();
+      await s.refreshAll(); // pull-to-refresh again: no second prompt
+      expect(n.asks, 1);
+      final again = AppState(prefs, repository: FakeRepo(_data()), notifier: n, httpClient: client); // app restarted
+      await again.refreshAll();
+      expect(n.asks, 1);
+    });
+
+    test('TC-NOTIFY-02: a device that cannot ask (no notifier) is not marked as asked', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final s = AppState(prefs, repository: FakeRepo(_data()), httpClient: MockClient((_) async => http.Response('x', 503)));
+      await s.refreshAll();
+      expect(prefs.getBool('n_asked'), isNull);
     });
 
     test('refreshAll loads data and news, then notifies', () async {
