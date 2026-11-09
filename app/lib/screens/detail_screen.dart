@@ -7,6 +7,7 @@ import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
+import '../util/live_bar.dart';
 import '../util/news_note.dart';
 import '../util/signal_outcome.dart';
 import '../widgets/common.dart';
@@ -121,7 +122,8 @@ class _DetailScreenState extends State<DetailScreen> {
     final c = context.c;
     final vn = q.market == Market.vn;
     final days = _range == '1T' ? 7 : _range == '1M' ? 30 : 90;
-    final bars = _bars == null ? const <DailyBar>[] : _bars!.sublist((_bars!.length - days).clamp(0, _bars!.length));
+    final live = withLiveBar(_bars ?? const <DailyBar>[], q); // today's point follows the quote each refresh
+    final bars = live.bars.sublist((live.bars.length - days).clamp(0, live.bars.length));
     final headlines = AppScope.of(context).headlinesOf(q.market, q.symbol);
     final marks = groupByBar(bars, [...signalMarks(_history ?? const []), ...newsMarks(headlines)]);
     return [
@@ -136,8 +138,13 @@ class _DetailScreenState extends State<DetailScreen> {
         padding: const EdgeInsets.all(Sp.s4),
         child: bars.length < 2
             ? SizedBox(height: 100, child: Center(child: Text(_bars == null ? '…' : 'Chưa có dữ liệu ngày', style: AppText.base(c.text3, size: Ts.s))))
-            : LineChart(bars, color: c.accent, marks: marks, onMarkTap: (d) => _showDay(context, d)),
+            : LineChart(bars, color: c.accent, marks: marks, liveLast: live.live, onMarkTap: (d) => _showDay(context, d)),
       ),
+      if (live.live && bars.length >= 2)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Sp.s4, 0, Sp.s4, Sp.s2),
+          child: Text('Chấm cuối là giá mới nhất, làm mới theo mỗi lượt bot (khoảng 30 phút trong phiên).', style: AppText.base(c.text3, size: Ts.xs)),
+        ),
       if (marks.isNotEmpty) _markLegend(c),
       _tiles(context, [
         ('Khối lượng', f.volume(q.vol), null),

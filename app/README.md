@@ -24,4 +24,5 @@ News and notifications (all inside the app, no Telegram, no server of its own):
   the permission request and a test notice.
 
 What the app cannot show yet, because the bot does not write it: zones (`zones` is empty until the engine is wired),
-daily charts (`bars_1d` has no source) and the bot's heartbeat (not readable by the app by design).
+and the bot's heartbeat (not readable by the app by design).
+Daily charts: `pipeline.daily` (workflow `daily`) fills `bars_1d` for VN from VCI/KBS; US has no daily source yet. The last point of the chart follows the live quote (`lib/util/live_bar.dart`).
