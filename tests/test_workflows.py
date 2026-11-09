@@ -145,6 +145,31 @@ class WeekendWorkflowTest(unittest.TestCase):
             self.assertNotIn(word, t, word)
 
 
+class NotifyStepTest(unittest.TestCase):
+    def step(self, text, title):
+        i = text.index(f"- name: {title}")
+        j = text.find("\n      - ", i + 1)
+        return text[i:] if j < 0 else text[i:j]
+
+    def test_each_snapshot_workflow_sends_notifications_after_the_bulletin(self):
+        for n, m in (("snap-vn.yml", "VN"), ("snap-us.yml", "US")):
+            t = read(n)
+            self.assertIn(f"python3 -m pipeline.notify --market {m}", t, n)
+            self.assertLess(t.index("pipeline.bulletin"), t.index("pipeline.notify"), n)
+            self.assertLess(t.index("pipeline.notify"), t.index("- name: Alert on failure"), n)
+
+    def test_notifications_still_run_when_the_bulletin_step_failed_but_not_when_cancelled(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            self.assertIn("if: ${{ !cancelled() }}", self.step(read(n), "Send notifications"), n)
+
+    def test_the_notify_step_gets_the_database_and_telegram_secrets_and_no_model_key(self):
+        for n in ("snap-vn.yml", "snap-us.yml"):
+            step = self.step(read(n), "Send notifications")
+            for k in ("SUPABASE_URL", "SUPABASE_SECRET_KEY", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"):
+                self.assertIn(f"{k}: ${{{{ secrets.{k} }}}}", step, n)
+            self.assertNotIn("ANTHROPIC", step, n)
+
+
 class FailureAlertTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "weekend.yml")
 
@@ -172,11 +197,15 @@ class FailureAlertTest(unittest.TestCase):
             self.assertIn("SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}", step, n)
             self.assertIn(f"ALERT_MARKET: {market}", step, n)
 
-    def test_telegram_secrets_are_only_given_to_the_alert_step(self):
+    def test_telegram_secrets_are_only_given_to_the_alert_step_and_the_notify_step(self):
         for n in self.NAMES:
             t = read(n)
-            self.assertEqual(t.count("secrets.TELEGRAM_BOT_TOKEN"), 1, n)
-            self.assertEqual(t.count("secrets.TELEGRAM_CHAT_ID"), 1, n)
+            want = 2 if n.startswith("snap-") else 1  # alert (+ notify in the snapshot workflows)
+            self.assertEqual(t.count("secrets.TELEGRAM_BOT_TOKEN"), want, n)
+            self.assertEqual(t.count("secrets.TELEGRAM_CHAT_ID"), want, n)
+            for title in ("Alert on failure",) + (("Send notifications",) if n.startswith("snap-") else ()):
+                step = self.step(t, title)
+                self.assertIn("secrets.TELEGRAM_BOT_TOKEN", step, f"{n}: {title}")
 
     def test_secrets_live_on_steps_not_on_the_job(self):
         for n in self.NAMES:
