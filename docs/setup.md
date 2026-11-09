@@ -15,9 +15,10 @@ Code đã đủ để chạy; còn lại là các bước cần quyền của ch
 2. Secrets của repo: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY` (Alpaca, thị trường Mỹ), `ANTHROPIC_API_KEY` (bản tin; hoặc thay bằng `CLAUDE_CODE_OAUTH_TOKEN` lấy từ `claude setup-token`, bản tin sẽ chạy qua lệnh `claude` gốc. Có cả hai thì dùng API key. Rủi ro điều khoản gói: xem https://code.claude.com/docs/en/legal-and-compliance), `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (báo lỗi).
 3. Chạy tay `snap-vn` bằng `workflow_dispatch` trong giờ chạy (9:00–15:40 giờ VN) rồi xem `snapshot_meta`, `quotes_latest`, `heartbeat` có dòng chưa. Lịch tự chạy bật ngay khi workflow có trên nhánh mặc định.
 4. Job `rls` của `db-test.yml` trên GitHub chưa từng chạy: xem kết quả lần đầu.
+5. Biểu đồ giá của app cần nến ngày: chạy tay workflow `daily` một lần (`workflow_dispatch`, `days` = 90, cần `quotes_latest` đã có mã VN). Sau đó nó tự chạy lúc 15:45 các ngày làm việc và nạp 7 phiên gần nhất.
 
 ## 3. Việc code CHƯA có (đừng chờ nó chạy)
 - **Gửi push thật**: `pipeline/push.py` chỉ quyết định nội dung/thời điểm; `bulletin.py` ghi quyết định vào `heartbeat.detail.push`. Chưa có kênh gửi (FCM/…) và chưa có hàng đợi giữ bản Mỹ 22:00–07:00 đến 07:00.
-- **S4/S5** (giá so với ATR, gap mở cửa Mỹ) chưa bật vì chưa có nguồn nến ngày cho `bars_1d` (`docs/s4-s5-pending.md`).
+- **S4/S5** (giá so với ATR, gap mở cửa Mỹ) chưa bật: `bars_1d` đã có nến ngày VN từ `pipeline.daily` nhưng `run.py` chưa đọc nó, và Mỹ chưa có nguồn nến ngày (`docs/s4-s5-pending.md`).
 - **Model ID**: `pipeline/agent.py` đặt `MODEL = "claude-haiku-5-5"` (test cố định giá trị này). Nếu API trả 400/404 thì mỗi lần chạy bản tin sẽ đỏ (chủ ý, để thấy lỗi cấu hình) và dùng bản tin dự phòng do code dựng. Kiểm tên model với tài khoản Anthropic của bạn trước lần chạy đầu; PR #4 từng ghi `claude-haiku-5-5` không tồn tại và dùng `claude-haiku-4-5`. Nếu đổi: sửa `MODEL` và hai test ghim giá trị.
 - Ứng dụng (đọc `digests`, `news`, realtime `snapshot_meta`) không nằm trong repo này.
