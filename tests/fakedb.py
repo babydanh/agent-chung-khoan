@@ -4,7 +4,7 @@ import urllib.parse
 # primary / unique keys of supabase/migrations/0002_market_and_app_tables.sql
 KEYS = {"conflict": {"bars_30m": ("market", "symbol", "bar_start"), "signals": ("market", "asof", "symbol"),
                      "snapshot_meta": ("market", "slot_start"), "quotes_latest": ("market", "symbol"),
-                     "heartbeat": ("market", "job")}}
+                     "heartbeat": ("market", "job"), "bars_1d": ("market", "symbol", "trade_date")}}
 
 
 class FakeDB:

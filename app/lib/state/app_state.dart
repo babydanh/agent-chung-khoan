@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/candles.dart';
 import '../data/demo_repository.dart';
 import '../data/repository.dart';
 import '../data/supabase_repository.dart';
@@ -231,6 +232,13 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       return const [];
     }
+  }
+
+  /// Candles of one VN symbol for a frame other than the daily one, straight from VCI (nothing is stored).
+  /// Throws [CandleError]; the US market has no such source.
+  Future<List<Candle>> candles(Market m, String symbol, Frame frame) {
+    if (m != Market.vn) return Future.error(CandleError('only the VN market has this frame'));
+    return fetchCandles(_client, symbol, frame, now: now);
   }
 
   Future<List<SignalRow>> signalHistory(Market m, String symbol) async {

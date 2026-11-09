@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/candles.dart';
 import '../models/models.dart';
 import '../state/scope.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.dart';
 import '../ui/app_icon.dart';
 import '../util/format.dart' as f;
+import '../util/live_bar.dart';
 import '../util/news_note.dart';
 import '../util/signal_outcome.dart';
 import '../widgets/common.dart';
+import '../widgets/candle_section.dart';
 import '../widgets/chart_marks.dart';
 import '../widgets/line_chart.dart';
 import '../widgets/news_note_view.dart';
@@ -29,6 +32,7 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   int _tab = 0;
   String _range = '1T';
+  Frame _frame = Frame.d1;
   List<DailyBar>? _bars;
   List<SignalRow>? _history;
 
@@ -121,24 +125,35 @@ class _DetailScreenState extends State<DetailScreen> {
     final c = context.c;
     final vn = q.market == Market.vn;
     final days = _range == '1T' ? 7 : _range == '1M' ? 30 : 90;
-    final bars = _bars == null ? const <DailyBar>[] : _bars!.sublist((_bars!.length - days).clamp(0, _bars!.length));
+    final live = withLiveBar(_bars ?? const <DailyBar>[], q); // today's point follows the quote each refresh
+    final bars = live.bars.sublist((live.bars.length - days).clamp(0, live.bars.length));
     final headlines = AppScope.of(context).headlinesOf(q.market, q.symbol);
     final marks = groupByBar(bars, [...signalMarks(_history ?? const []), ...newsMarks(headlines)]);
     return [
       PriceBar(q),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Sp.s4),
-        child: Row(children: [
-          Segmented<String>(value: _range, options: const [('1T', '1T'), ('1M', '1M'), ('3M', '3M')], onChanged: (v) => setState(() => _range = v)),
-        ]),
-      ),
-      Padding(
-        padding: const EdgeInsets.all(Sp.s4),
-        child: bars.length < 2
-            ? SizedBox(height: 100, child: Center(child: Text(_bars == null ? '…' : 'Chưa có dữ liệu ngày', style: AppText.base(c.text3, size: Ts.s))))
-            : LineChart(bars, color: c.accent, marks: marks, onMarkTap: (d) => _showDay(context, d)),
-      ),
-      if (marks.isNotEmpty) _markLegend(c),
+      if (vn) _frameBar(c), // other frames are VN only: VCI has no US candles
+      if (_frame != Frame.d1)
+        CandleSection(key: ValueKey(_frame), market: q.market, symbol: q.symbol, frame: _frame)
+      else ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Sp.s4),
+          child: Row(children: [
+            Segmented<String>(value: _range, options: const [('1T', '1T'), ('1M', '1M'), ('3M', '3M')], onChanged: (v) => setState(() => _range = v)),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(Sp.s4),
+          child: bars.length < 2
+              ? SizedBox(height: 100, child: Center(child: Text(_bars == null ? '…' : 'Chưa có dữ liệu ngày', style: AppText.base(c.text3, size: Ts.s))))
+              : LineChart(bars, color: c.accent, marks: marks, liveLast: live.live, onMarkTap: (d) => _showDay(context, d)),
+        ),
+        if (live.live && bars.length >= 2)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Sp.s4, 0, Sp.s4, Sp.s2),
+            child: Text('Chấm cuối là giá mới nhất, làm mới theo mỗi lượt bot (khoảng 30 phút trong phiên).', style: AppText.base(c.text3, size: Ts.xs)),
+          ),
+        if (marks.isNotEmpty) _markLegend(c),
+      ],
       _tiles(context, [
         ('Khối lượng', f.volume(q.vol), null),
         ('Giá trị', f.valueBillions(q.val), null),
@@ -158,6 +173,29 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     ];
   }
+
+  /// One chip per time frame, scrollable so seven fit a narrow phone.
+  Widget _frameBar(AppColors c) => SizedBox(
+        height: Sp.touch,
+        child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: Sp.s2), children: [
+          for (final fr in Frame.values)
+            Semantics(
+              button: true,
+              selected: fr == _frame,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _frame = fr),
+                child: Container(
+                  alignment: Alignment.center,
+                  constraints: const BoxConstraints(minWidth: 48),
+                  padding: const EdgeInsets.symmetric(horizontal: Sp.s3),
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: fr == _frame ? c.accent : Colors.transparent, width: 2))),
+                  child: Text(fr.label, style: AppText.base(fr == _frame ? c.text : c.text2, size: Ts.s, weight: FontWeight.w600)),
+                ),
+              ),
+            ),
+        ]),
+      );
 
   Widget _markLegend(AppColors c) {
     Widget dot(Color color) => Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));

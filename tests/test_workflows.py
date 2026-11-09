@@ -209,6 +209,37 @@ class EodJobTest(unittest.TestCase):
         self.assertEqual(crons(read("eod.yml")), [("18:00".lstrip("0"), "Asia/Ho_Chi_Minh")])
 
 
+class DailyWorkflowTest(unittest.TestCase):
+    """TC-DAILY-15: daily candles for the app chart, after the last VN snapshot, behind the same switch and alert rules."""
+
+    def test_it_runs_once_after_the_last_vn_snapshot_on_weekdays(self):
+        t = read("daily.yml")
+        self.assertEqual(crons(t), [("15:45", "Asia/Ho_Chi_Minh")])
+        self.assertTrue(re.findall(r'- cron: "([^"]+)"', t)[0].endswith(" * * 1-5"))
+        self.assertIn("workflow_dispatch:", t)
+
+    def test_it_fetches_seven_sessions_by_default_and_the_dispatch_input_can_fill_history(self):
+        t = read("daily.yml")
+        self.assertIn("python3 -m pipeline.daily", t)
+        self.assertIn("DAILY_DAYS: ${{ inputs.days || '7' }}", t)
+        self.assertRegex(t, r'days:\n\s+description: .*\n\s+default: "90"')
+
+    def test_it_follows_the_workflow_rules_of_the_other_jobs(self):
+        t = read("daily.yml")
+        self.assertIn(BotSwitchTest.GUARD, t.split("steps:")[0])
+        self.assertRegex(t, r"permissions:\s+contents: read")
+        self.assertIn("cancel-in-progress: false", t)
+        self.assertIn("persist-credentials: false", t[t.index("actions/checkout@"):][:300])
+        for u in re.findall(r"uses:\s*(\S+)", t):
+            self.assertRegex(u, r"^[\w.-]+/[\w.-]+@[0-9a-f]{40}$", u)
+        self.assertNotRegex(t, r"\n    env:\n")
+        self.assertEqual(t.count("secrets.TELEGRAM_BOT_TOKEN"), 1)
+        i = t.index("- name: Alert on failure")
+        self.assertIn("if: failure()", t[i:])
+        self.assertIn("ALERT_MARKET: VN", t[i:])
+        self.assertTrue(t.rstrip().endswith(t[i:].rstrip()), "the alert must be the last step")
+
+
 class AllWorkflowsTest(unittest.TestCase):
     NAMES = ("snap-vn.yml", "snap-us.yml", "eod.yml", "weekend.yml", "ci.yml")
 

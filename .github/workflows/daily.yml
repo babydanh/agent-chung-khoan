@@ -1,0 +1,58 @@
+name: daily
+
+on:
+  schedule:
+    - cron: "45 15 * * 1-5"
+      timezone: "Asia/Ho_Chi_Minh"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Sessions to fetch per symbol (90 fills the chart history, the schedule only needs 7)"
+        default: "90"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+jobs:
+  candles:
+    if: ${{ vars.BOT_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Check secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          missing=""
+          for name in "SUPABASE_URL" "SUPABASE_SECRET_KEY"; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing secrets:$missing"
+            exit 1
+          fi
+      - name: Fetch daily candles
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          DAILY_DAYS: ${{ inputs.days || '7' }}
+        run: python3 -m pipeline.daily
+      - name: Alert on failure
+        if: failure()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          ALERT_MARKET: VN
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 -m pipeline.alert
