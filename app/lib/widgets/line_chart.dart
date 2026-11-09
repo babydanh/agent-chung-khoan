@@ -56,13 +56,16 @@ List<CurveSegment> smoothSegments(List<Offset> pts) {
 /// headlines. [liveLast] puts a dot on the last point (it comes from the live quote). The line draws in once and again
 /// when another range is shown, unless the system asks for no animation.
 class LineChart extends StatefulWidget {
-  const LineChart(this.bars, {super.key, required this.color, this.height = 140, this.marks = const [], this.onMarkTap, this.liveLast = false});
+  const LineChart(this.bars, {super.key, required this.color, this.height = 140, this.marks = const [], this.onMarkTap, this.liveLast = false, this.replayOnRange = true});
   final List<DailyBar> bars;
   final Color color;
   final double height;
   final List<DayMarks> marks;
   final void Function(DayMarks day)? onMarkTap;
   final bool liveLast;
+
+  /// Draw in again when the first bar changes. Off for a live window that slides by one bar every few minutes.
+  final bool replayOnRange;
 
   @override
   State<LineChart> createState() => _LineChartState();
@@ -87,7 +90,7 @@ class _LineChartState extends State<LineChart> with SingleTickerProviderStateMix
     super.didUpdateWidget(old);
     // A new first day means another range (or a new session pushed the window); a refreshed last price keeps the line still.
     final other = old.bars.isEmpty || widget.bars.isEmpty || old.bars.first.date != widget.bars.first.date;
-    if (other) _play();
+    if (other && widget.replayOnRange) _play();
   }
 
   @override

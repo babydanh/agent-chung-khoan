@@ -64,4 +64,17 @@ void main() {
     expect(tester.hasRunningAnimations, isTrue, reason: 'a different range draws in again');
     await tester.pumpAndSettle();
   });
+
+  testWidgets('TC-SMOOTH-05: a sliding live window (replayOnRange off) never replays the intro', (tester) async {
+    Widget chart(List<DailyBar> bars) => MaterialApp(
+          theme: buildTheme(Brightness.dark),
+          home: Scaffold(body: Center(child: SizedBox(width: 300, child: LineChart(bars, color: Colors.teal, replayOnRange: false)))),
+        );
+    await tester.pumpWidget(chart(_bars));
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(chart(_bars.sublist(1))); // the first candle dropped out, a new one came in
+
+    expect(tester.hasRunningAnimations, isFalse);
+  });
 }
